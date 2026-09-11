@@ -143,9 +143,9 @@ Con esto crearíamos una API que se encargue de recibir las solicitudes de la p�
 
 Base de datos
 
-PostgreSQL
+PostgreSQL O NOSQL
 
-Para guardar la información de los eventos utilizaríamos PostgreSQL.
+Para guardar la información de los eventos utilizaríamos PostgreSQL o como segunda opcion NOSQL
 
 Ahí podríamos almacenar datos como:
 

@@ -1,0 +1,399 @@
+Proyecto: CultGo!
+Integrantes
+
+Integrante 1: Jesus Obed Cabrera Morales — MoralesJesus
+
+Integrante 2: Gabriel Ezait Guzmán Rivera — GabrielEzaitGuzmanRivera140562
+
+Integrante 3: Pedro Bolaños López — blpeter3014-hub
+
+Integrante 4: Litzy Silva García — SugaarTea
+
+1. Propuesta general
+
+Nuestro proyecto se llamará CultGo! y estará enfocado en la búsqueda de eventos musicales dentro de Oaxaca de Juárez.
+
+La idea principal es hacer una página web donde las personas puedan encontrar conciertos, presentaciones de artistas, música en vivo y otros eventos relacionados con la música.
+
+Nos gustaría que la página tuviera un mapa interactivo, en donde se puedan ver los lugares donde se realizarán los eventos. Al seleccionar uno de los eventos, se mostraría información como el nombre del evento, artista, fecha, hora, lugar y dirección.
+
+Elegimos esta idea porque creemos que muchas veces los eventos musicales se encuentran publicados en diferentes redes sociales o páginas y puede ser complicado encontrar toda la información en un solo lugar.
+
+Con CultGo! queremos facilitar la búsqueda de estos eventos y también ayudar a dar a conocer a artistas y lugares de Oaxaca.
+
+Por el momento el proyecto estará enfocado solamente en Oaxaca de Juárez, aunque en un futuro podría ampliarse a otras ciudades.
+
+2. Objetivo general
+
+Nuestro objetivo es desarrollar una página web que permita a los usuarios buscar y localizar eventos musicales en Oaxaca mediante un mapa interactivo.
+
+También queremos que el usuario pueda consultar fácilmente la información de cada evento y encontrar actividades dependiendo de sus gustos o de la fecha.
+
+Objetivos específicos
+Crear un mapa de Oaxaca donde aparezcan los eventos musicales.
+Mostrar información de cada evento.
+Permitir buscar eventos y artistas.
+Agregar filtros por fecha y género musical.
+Crear un calendario de próximos eventos.
+Crear un sistema de inicio de sesión.
+Guardar la información de los eventos en una base de datos.
+Hacer que la página pueda utilizarse tanto en computadora como en celular.
+Realizar pruebas con usuarios para saber si la página es fácil de utilizar.
+3. ¿Cómo funcionaría?
+
+La página principal tendría el mapa de Oaxaca y sobre este aparecerían diferentes marcadores.
+
+Cada marcador representaría un evento musical.
+
+Por ejemplo, si una persona encuentra un marcador, podría seleccionarlo y aparecería algo como:
+
+Concierto de [Artista]
+
+Fecha: 20/10/2026
+Hora: 8:00 PM
+Lugar: [Nombre del lugar]
+Género: Rock
+
+Descripción:
+Información sobre el evento.
+
+También habría una opción para buscar eventos.
+
+Por ejemplo:
+
+Buscar: "Rock"
+
+Y se mostrarían los eventos relacionados.
+
+4. Funciones que tendría
+Mapa
+
+La función principal sería un mapa interactivo donde se puedan localizar los eventos musicales.
+
+Para esto nosotros usaríamos Google Maps Platform, ya que consideramos que es una herramienta conocida y que facilitaría la ubicación de los eventos.
+
+Eventos
+
+Cada evento tendría información básica como:
+
+Nombre.
+Artista o grupo.
+Género musical.
+Fecha.
+Hora.
+Lugar.
+Dirección.
+Ubicación.
+Descripción.
+Búsqueda
+
+El usuario podría buscar un evento por su nombre, artista o grupo.
+
+Filtros
+
+Nos gustaría agregar filtros para facilitar la búsqueda.
+
+Principalmente:
+
+Fecha.
+Género musical.
+Ubicación.
+Calendario
+
+También recomendamos agregar un calendario donde se puedan consultar los próximos eventos musicales.
+
+Inicio de sesión
+
+Para el inicio de sesión usaríamos Google Authentication mediante Firebase, ya que nos parece una opción más sencilla que crear nuestro propio sistema de contraseñas desde cero.
+
+Artistas locales
+
+Otra función que nos gustaría implementar es una sección donde se puedan conocer artistas locales.
+
+Como función adicional, se podría agregar música de estos artistas, dependiendo de la disponibilidad y de los permisos para utilizar su contenido.
+
+5. Tecnologías que utilizaríamos
+
+Para el desarrollo del proyecto tenemos pensado utilizar las siguientes tecnologías:
+
+Frontend
+
+React.js + TypeScript
+
+Usaríamos React para crear la interfaz de la página mediante componentes.
+
+También utilizaríamos:
+
+HTML5.
+CSS3.
+React Router.
+Axios.
+
+Elegimos React porque consideramos que nos puede facilitar la creación de una página con diferentes componentes y elementos que cambian dependiendo de las acciones del usuario.
+
+Backend
+
+Node.js + Express.js + TypeScript
+
+Para el backend recomendamos utilizar Node.js junto con Express.js.
+
+Con esto crearíamos una API que se encargue de recibir las solicitudes de la página y comunicarse con la base de datos.
+
+Base de datos
+
+PostgreSQL
+
+Para guardar la información de los eventos utilizaríamos PostgreSQL.
+
+Ahí podríamos almacenar datos como:
+
+Eventos.
+Artistas.
+Lugares.
+Géneros.
+Fechas.
+Horarios.
+Ubicaciones.
+Mapa
+
+Google Maps Platform
+
+Utilizaríamos Google Maps para mostrar el mapa y las ubicaciones de los eventos.
+
+Autenticación
+
+Firebase Authentication
+
+Para el inicio de sesión utilizaríamos Firebase Authentication con Google.
+
+Control de versiones
+
+Git y GitHub
+
+Utilizaríamos Git y GitHub para guardar el código y llevar un control de las diferentes versiones del proyecto.
+
+También nos serviría para trabajar entre los integrantes sin perder los cambios realizados.
+
+6. Arquitectura
+
+La arquitectura que proponemos sería aproximadamente:
+
+                 USUARIO
+                    │
+                    ▼
+        ┌─────────────────────┐
+        │      FRONTEND       │
+        │ React + TypeScript  │
+        └──────────┬──────────┘
+                   │
+                   │ Axios / HTTP
+                   ▼
+        ┌─────────────────────┐
+        │       BACKEND       │
+        │ Node.js + Express   │
+        └──────────┬──────────┘
+                   │
+                   ▼
+        ┌─────────────────────┐
+        │     PostgreSQL      │
+        │    Base de datos    │
+        └─────────────────────┘
+
+        ┌─────────────────────┐
+        │    Google Maps      │
+        │      Platform       │
+        └─────────────────────┘
+
+        ┌─────────────────────┐
+        │      Firebase       │
+        │   Authentication    │
+        └─────────────────────┘
+7. Información que guardaríamos
+
+Los eventos tendrían información parecida a:
+
+ID
+Nombre del evento
+Artista
+Género musical
+Fecha
+Hora
+Lugar
+Dirección
+Latitud
+Longitud
+Descripción
+
+Las coordenadas de latitud y longitud servirían para colocar correctamente el evento dentro del mapa.
+
+8. Alcances
+
+Como este es un proyecto que queremos desarrollar a largo plazo, consideramos importante separar las funciones principales de las funciones que podrían agregarse después.
+
+Primera versión
+
+Como mínimo queremos que funcione:
+
+Mapa.
+Eventos musicales.
+Información de eventos.
+Búsqueda.
+Filtros.
+Próximos eventos.
+Versión final
+
+La versión que nos gustaría entregar tendría:
+
+Mapa interactivo.
+Base de datos.
+Backend.
+Búsqueda.
+Filtros.
+Calendario.
+Inicio de sesión con Google.
+Diseño para computadora y celular.
+Información de artistas.
+Funciones adicionales
+
+Si tenemos tiempo suficiente, podríamos agregar:
+
+Ubicación del usuario.
+Distancia entre el usuario y un evento.
+Eventos favoritos.
+Recomendaciones.
+Música de artistas locales.
+Inteligencia artificial.
+
+Estas funciones no serían indispensables para considerar terminado el proyecto principal.
+
+9. Inteligencia artificial
+
+También tenemos contemplado utilizar inteligencia artificial mediante una API de un modelo de lenguaje.
+
+Por ejemplo, nos gustaría que posteriormente el usuario pudiera escribir algo como:
+
+"Quiero encontrar música rock este fin de semana"
+
+y que la IA ayudara a interpretar la búsqueda.
+
+Por el momento no hemos decidido qué API utilizaríamos, ya que primero queremos comparar opciones dependiendo del costo, facilidad de implementación y disponibilidad.
+
+La IA sería una función adicional y no afectaría el funcionamiento principal de la página.
+
+10. Pruebas
+
+Para comprobar que el proyecto funciona correctamente, realizaríamos pruebas con aproximadamente 5 a 10 personas.
+
+Les pediríamos realizar algunas actividades, por ejemplo:
+
+Buscar un evento.
+Buscar un artista.
+Utilizar un filtro.
+Seleccionar un evento.
+Encontrar su ubicación en el mapa.
+
+Después recopilaríamos sus comentarios para saber qué partes de la página podrían mejorarse.
+
+11. Métricas
+
+Como métricas mínimas proponemos:
+
+Tasa de éxito
+
+Medir cuántas personas pudieron completar correctamente las tareas.
+
+Nuestra meta sería que al menos el 80 % de los usuarios pudiera realizar las tareas principales.
+
+Tiempo de búsqueda
+
+Medir cuánto tarda una persona en encontrar un evento determinado.
+
+Opinión de los usuarios
+
+Al terminar las pruebas, realizaríamos una encuesta sencilla para conocer qué tan fácil fue utilizar la página.
+
+12. Riesgos
+
+Uno de los principales riesgos sería depender de servicios externos como Google Maps y Firebase.
+
+También podría ser complicado mantener actualizada la información de los eventos, ya que las fechas, horarios o lugares podrían cambiar.
+
+Otro riesgo sería intentar agregar demasiadas funciones y no tener suficiente tiempo para terminarlas.
+
+Por eso nuestra prioridad sería desarrollar primero las funciones principales y después agregar las funciones adicionales.
+
+13. ¿Qué vamos a entregar?
+
+Al finalizar el proyecto queremos entregar una aplicación web funcional llamada CultGo!
+
+La entrega incluiría:
+
+Aplicación web
+
+Una página donde se puedan consultar eventos musicales de Oaxaca.
+
+Mapa interactivo
+
+Un mapa donde aparezcan las ubicaciones de los eventos.
+
+Sistema de eventos
+
+Información de los eventos almacenada en PostgreSQL.
+
+Búsqueda
+
+Búsqueda de eventos y artistas.
+
+Filtros
+
+Filtros principalmente por fecha, género musical y ubicación.
+
+Calendario
+
+Calendario para consultar los próximos eventos.
+
+Inicio de sesión
+
+Inicio de sesión mediante Google.
+
+Diseño adaptable
+
+La página deberá funcionar tanto en computadora como en dispositivos móviles.
+
+Backend
+
+Un backend desarrollado con Node.js y Express.js.
+
+Base de datos
+
+Una base de datos PostgreSQL con la información necesaria para el funcionamiento de CultGo!.
+
+Código
+
+El código completo del proyecto estará almacenado en GitHub.
+
+Documentación
+
+También entregaríamos la documentación del proyecto, incluyendo:
+
+Descripción del proyecto.
+Objetivos.
+Alcance.
+Tecnologías utilizadas.
+Arquitectura.
+Base de datos.
+Funcionamiento.
+API.
+Pruebas.
+Resultados.
+Presentación
+
+Finalmente realizaríamos una demostración de la aplicación funcionando para mostrar las características que desarrollamos.
+
+14. Resultado esperado
+
+Al finalizar el proyecto esperamos tener una página web funcional que permita a las personas encontrar eventos musicales en Oaxaca de Juárez de una manera más sencilla, mostrando su información y ubicación mediante un mapa.
+
+La idea principal de CultGo! sería juntar en una sola plataforma información que normalmente se encuentra repartida en diferentes lugares y facilitar que las personas puedan descubrir conciertos, artistas y eventos musicales de la ciudad.
+
+Por ahora, el proyecto se encuentra en etapa de planeación, por lo que todavía no comenzaríamos con la programación. Esta propuesta nos serviría como base para posteriormente comenzar con el diseño, la base de datos y el desarrollo de la aplicación.

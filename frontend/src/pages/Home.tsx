@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import TarjetaEvento from '../components/eventos/TarjetaEvento';
 import Buscador from '../components/buscador/Buscador';
+import FiltroGenero from '../components/filtros/FiltroGenero';
 import type { Evento } from '../types';
 
 // Datos de prueba, despues vendran del backend
@@ -46,14 +47,23 @@ const eventosPrueba: Evento[] = [
   }
 ];
 
-const Home = () => {
-  const [busqueda, setBusqueda] = useState(''); // texto que escribe el usuario
+// lista de generos disponibles, sacada de los eventos (sin repetidos)
+const generosDisponibles = [...new Set(eventosPrueba.map((e) => e.genero))];
 
-  // filtro de busqueda: deja solo eventos que coincidan en nombre o artista
-  const eventosFiltrados = eventosPrueba.filter((evento) =>
-    evento.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    evento.artista.toLowerCase().includes(busqueda.toLowerCase())
-  );
+const Home = () => {
+  const [busqueda, setBusqueda] = useState('');
+  const [genero, setGenero] = useState('');
+
+  // filtro combinado: coincide con el texto Y con el genero (si hay uno elegido)
+  const eventosFiltrados = eventosPrueba.filter((evento) => {
+    const coincideTexto =
+      evento.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+      evento.artista.toLowerCase().includes(busqueda.toLowerCase());
+
+    const coincideGenero = genero === '' || evento.genero === genero;
+
+    return coincideTexto && coincideGenero;
+  });
 
   return (
     <div style={{ padding: '20px' }}>
@@ -61,8 +71,8 @@ const Home = () => {
       <p>Encuentra eventos musicales en Oaxaca de Juarez</p>
 
       <Buscador valor={busqueda} onCambio={setBusqueda} />
+      <FiltroGenero generoSeleccionado={genero} generos={generosDisponibles} onCambio={setGenero} />
 
-      {/* dibuja una tarjeta por cada evento filtrado */}
       {eventosFiltrados.map((evento) => (
         <TarjetaEvento key={evento.id} evento={evento} />
       ))}

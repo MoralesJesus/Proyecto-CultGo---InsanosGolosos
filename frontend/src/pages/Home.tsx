@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import TarjetaEvento from '../components/eventos/TarjetaEvento';
 import Buscador from '../components/buscador/Buscador';
 import FiltroGenero from '../components/filtros/FiltroGenero';
@@ -65,9 +66,17 @@ const Home = () => {
     return coincideTexto && coincideGenero;
   });
 
-  return (
+    return (
     <div style={{ padding: '20px' }}>
-      <h1>CultGo!</h1>
+      {/* barra superior con el boton de login a la derecha */}
+            <div style={{ position: 'relative', textAlign: 'center' }}>
+        <h1 className="titulo-animado">CultGo!</h1>
+        <Link to="/login">
+          <button style={{ position: 'absolute', top: '10px', right: '0', padding: '8px 16px', cursor: 'pointer' }}>
+            Iniciar sesion
+          </button>
+        </Link>
+      </div>
       <p>Encuentra eventos musicales en Oaxaca de Juarez</p>
 
       <Buscador valor={busqueda} onCambio={setBusqueda} />

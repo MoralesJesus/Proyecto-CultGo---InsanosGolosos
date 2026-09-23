@@ -76,7 +76,7 @@ const Home = () => {
             Iniciar sesion
           </button>
         </Link>
-      </div>
+      </div> 
       <p>Encuentra eventos musicales en Oaxaca de Juarez</p>
 
       <Buscador valor={busqueda} onCambio={setBusqueda} />

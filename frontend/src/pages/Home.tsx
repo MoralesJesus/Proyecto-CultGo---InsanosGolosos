@@ -58,23 +58,34 @@ const convertirFecha = (fecha: string) => {
   return `${anio}-${mes}-${dia}`;
 };
 
+// convierte la fecha a un objeto Date real, para poder ordenar cronologicamente
+const aFechaReal = (fecha: string) => {
+  const [dia, mes, anio] = fecha.split('/');
+  return new Date(`${anio}-${mes}-${dia}`);
+};
+
 const Home = () => {
   const [busqueda, setBusqueda] = useState('');
   const [genero, setGenero] = useState('');
   const [fecha, setFecha] = useState('');
 
   // filtro combinado: texto + genero + fecha
-  const eventosFiltrados = eventosPrueba.filter((evento) => {
-    const coincideTexto =
-      evento.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      evento.artista.toLowerCase().includes(busqueda.toLowerCase());
+    const eventosFiltrados = eventosPrueba
+    .filter((evento) => {
+      const coincideTexto =
+        evento.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+        evento.artista.toLowerCase().includes(busqueda.toLowerCase());
 
-    const coincideGenero = genero === '' || evento.genero === genero;
+      const coincideGenero = genero === '' || evento.genero === genero;
 
-    const coincideFecha = fecha === '' || convertirFecha(evento.fecha) === fecha;
+      const coincideFecha = fecha === '' || convertirFecha(evento.fecha) === fecha;
 
-    return coincideTexto && coincideGenero && coincideFecha;
-  });
+      return coincideTexto && coincideGenero && coincideFecha;
+    })
+    // ordena del evento mas proximo al mas lejano
+    .sort((a, b) => aFechaReal(a.fecha).getTime() - aFechaReal(b.fecha).getTime());
+
+    
 
   return (
     <div style={{ padding: '20px' }}>

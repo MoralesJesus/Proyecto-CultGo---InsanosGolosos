@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import TarjetaEvento from '../components/eventos/TarjetaEvento';
 import Buscador from '../components/buscador/Buscador';
 import FiltroGenero from '../components/filtros/FiltroGenero';
+import FiltroFecha from '../components/filtros/FiltroFecha';
 import type { Evento } from '../types';
 
 // Datos de prueba, despues vendran del backend
@@ -51,11 +52,18 @@ const eventosPrueba: Evento[] = [
 // lista de generos disponibles, sacada de los eventos (sin repetidos)
 const generosDisponibles = [...new Set(eventosPrueba.map((e) => e.genero))];
 
+// convierte "20/10/2026" a "2026-10-20" para poder comparar con el input tipo date
+const convertirFecha = (fecha: string) => {
+  const [dia, mes, anio] = fecha.split('/');
+  return `${anio}-${mes}-${dia}`;
+};
+
 const Home = () => {
   const [busqueda, setBusqueda] = useState('');
   const [genero, setGenero] = useState('');
+  const [fecha, setFecha] = useState('');
 
-  // filtro combinado: coincide con el texto Y con el genero (si hay uno elegido)
+  // filtro combinado: texto + genero + fecha
   const eventosFiltrados = eventosPrueba.filter((evento) => {
     const coincideTexto =
       evento.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -63,28 +71,39 @@ const Home = () => {
 
     const coincideGenero = genero === '' || evento.genero === genero;
 
-    return coincideTexto && coincideGenero;
+    const coincideFecha = fecha === '' || convertirFecha(evento.fecha) === fecha;
+
+    return coincideTexto && coincideGenero && coincideFecha;
   });
 
-    return (
+  return (
     <div style={{ padding: '20px' }}>
       {/* barra superior con el boton de login a la derecha */}
-            <div style={{ position: 'relative', textAlign: 'center' }}>
+      <div style={{ position: 'relative', textAlign: 'center' }}>
         <h1 className="titulo-animado">CultGo!</h1>
         <Link to="/login">
           <button style={{ position: 'absolute', top: '10px', right: '0', padding: '8px 16px', cursor: 'pointer' }}>
             Iniciar sesion
           </button>
         </Link>
-      </div> 
+      </div>
       <p>Encuentra eventos musicales en Oaxaca de Juarez</p>
 
       <Buscador valor={busqueda} onCambio={setBusqueda} />
       <FiltroGenero generoSeleccionado={genero} generos={generosDisponibles} onCambio={setGenero} />
+      <FiltroFecha fechaSeleccionada={fecha} onCambio={setFecha} />
 
-      {eventosFiltrados.map((evento) => (
-        <TarjetaEvento key={evento.id} evento={evento} />
-      ))}
+      {eventosFiltrados.length === 0 ? (
+        <p>
+          {fecha
+            ? `No hay eventos disponibles en la fecha ${fecha}.`
+            : 'No hay eventos disponibles con esos filtros.'}
+        </p>
+      ) : (
+        eventosFiltrados.map((evento) => (
+          <TarjetaEvento key={evento.id} evento={evento} />
+        ))
+      )}
     </div>
   );
 };

@@ -4,50 +4,9 @@ import TarjetaEvento from '../components/eventos/TarjetaEvento';
 import Buscador from '../components/buscador/Buscador';
 import FiltroGenero from '../components/filtros/FiltroGenero';
 import FiltroFecha from '../components/filtros/FiltroFecha';
-import type { Evento } from '../types';
+import { eventosPrueba } from '../data/eventosPrueba';
 
-// Datos de prueba, despues vendran del backend
-const eventosPrueba: Evento[] = [
-  {
-    id: 1,
-    nombre: 'Noche de Rock en el Centro',
-    artista: 'Los Alebrijes',
-    genero: 'Rock',
-    fecha: '20/10/2026',
-    hora: '8:00 PM',
-    lugar: 'Casa de la Cultura Oaxaqueña',
-    direccion: 'Av. Independencia 123',
-    latitud: 17.0654,
-    longitud: -96.7237,
-    descripcion: 'Concierto en vivo con bandas locales de rock alternativo.'
-  },
-  {
-    id: 2,
-    nombre: 'Jazz Bajo las Estrellas',
-    artista: 'Trio Nocturno',
-    genero: 'Jazz',
-    fecha: '25/10/2026',
-    hora: '9:00 PM',
-    lugar: 'Jardin Etnobotanico',
-    direccion: 'Reforma 501',
-    latitud: 17.0678,
-    longitud: -96.7245,
-    descripcion: 'Una velada intima de jazz en un espacio al aire libre.'
-  },
-  {
-    id: 3,
-    nombre: 'Fiesta Electronica Oaxaca',
-    artista: 'DJ Sunu',
-    genero: 'Electronica',
-    fecha: '01/11/2026',
-    hora: '10:00 PM',
-    lugar: 'Foro Cultural',
-    direccion: 'Calle Morelos 200',
-    latitud: 17.0601,
-    longitud: -96.7266,
-    descripcion: 'Musica electronica con artistas locales y visuales en vivo.'
-  }
-];
+
 
 // lista de generos disponibles, sacada de los eventos (sin repetidos)
 const generosDisponibles = [...new Set(eventosPrueba.map((e) => e.genero))];
@@ -111,8 +70,10 @@ const Home = () => {
             : 'No hay eventos disponibles con esos filtros.'}
         </p>
       ) : (
-        eventosFiltrados.map((evento) => (
-          <TarjetaEvento key={evento.id} evento={evento} />
+                eventosFiltrados.map((evento) => (
+          <Link key={evento.id} to={`/evento/${evento.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <TarjetaEvento evento={evento} />
+          </Link>
         ))
       )}
     </div>

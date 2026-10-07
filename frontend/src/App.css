@@ -199,3 +199,15 @@
 .titulo-animado {
   animation: entradaTitulo 0.6s ease-out;
 }
+
+
+/* fondo general de la pagina con imagen difuminada/oscurecida */
+body {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+    url('./assets/SantoDomingonew.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}

@@ -5,6 +5,7 @@ import Buscador from '../components/buscador/Buscador';
 import FiltroGenero from '../components/filtros/FiltroGenero';
 import FiltroFecha from '../components/filtros/FiltroFecha';
 import { eventosPrueba } from '../data/eventosPrueba';
+import { calcularDistancia } from '../utils/distancia';
 
 
 
@@ -27,6 +28,24 @@ const Home = () => {
   const [busqueda, setBusqueda] = useState('');
   const [genero, setGenero] = useState('');
   const [fecha, setFecha] = useState('');
+  const [ubicacion, setUbicacion] = useState<{ lat: number; lon: number } | null>(null);
+
+
+    // pide permiso al navegador y guarda la ubicacion del usuario
+  const obtenerUbicacion = () => {
+    navigator.geolocation.getCurrentPosition(
+      (posicion) => {
+        setUbicacion({
+          lat: posicion.coords.latitude,
+          lon: posicion.coords.longitude
+        });
+      },
+      (error) => {
+        console.error('Error al obtener ubicacion:', error);
+        alert('No se pudo obtener tu ubicacion. Revisa los permisos del navegador.');
+      }
+    );
+  };
 
   // filtro combinado: texto + genero + fecha
     const eventosFiltrados = eventosPrueba
@@ -41,8 +60,16 @@ const Home = () => {
 
       return coincideTexto && coincideGenero && coincideFecha;
     })
-    // ordena del evento mas proximo al mas lejano
-    .sort((a, b) => aFechaReal(a.fecha).getTime() - aFechaReal(b.fecha).getTime());
+    
+        // si hay ubicacion, ordena por cercania; si no, ordena por fecha
+    .sort((a, b) => {
+      if (ubicacion) {
+        const distanciaA = calcularDistancia(ubicacion.lat, ubicacion.lon, a.latitud, a.longitud);
+        const distanciaB = calcularDistancia(ubicacion.lat, ubicacion.lon, b.latitud, b.longitud);
+        return distanciaA - distanciaB;
+      }
+      return aFechaReal(a.fecha).getTime() - aFechaReal(b.fecha).getTime();
+    });
 
     
 
@@ -59,9 +86,17 @@ const Home = () => {
       </div>
       <p>Encuentra eventos musicales en Oaxaca de Juarez</p>
 
-      <Buscador valor={busqueda} onCambio={setBusqueda} />
-      <FiltroGenero generoSeleccionado={genero} generos={generosDisponibles} onCambio={setGenero} />
-      <FiltroFecha fechaSeleccionada={fecha} onCambio={setFecha} />
+                  <div style={{ marginBottom: '12px' }}>
+        <Buscador valor={busqueda} onCambio={setBusqueda} />
+        <FiltroGenero generoSeleccionado={genero} generos={generosDisponibles} onCambio={setGenero} />
+        <FiltroFecha fechaSeleccionada={fecha} onCambio={setFecha} />
+      </div>
+
+      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+        <button onClick={obtenerUbicacion} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+          📍 Ordenar por cercania
+        </button>
+      </div>
 
       {eventosFiltrados.length === 0 ? (
         <p>

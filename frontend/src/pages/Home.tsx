@@ -46,6 +46,10 @@ const Home = () => {
       }
     );
   };
+    // regresa al orden normal (por fecha), quitando la ubicacion guardada
+  const quitarUbicacion = () => {
+    setUbicacion(null);
+  };
 
   // filtro combinado: texto + genero + fecha
     const eventosFiltrados = eventosPrueba
@@ -92,10 +96,15 @@ const Home = () => {
         <FiltroFecha fechaSeleccionada={fecha} onCambio={setFecha} />
       </div>
 
-      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
         <button onClick={obtenerUbicacion} style={{ padding: '8px 16px', cursor: 'pointer' }}>
           📍 Ordenar por cercania
         </button>
+        {ubicacion && (
+          <button onClick={quitarUbicacion} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+            ❌ Quitar orden por cercania
+          </button>
+        )}
       </div>
 
       {eventosFiltrados.length === 0 ? (

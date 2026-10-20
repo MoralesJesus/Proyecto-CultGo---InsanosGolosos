@@ -211,3 +211,12 @@ body {
   background-attachment: fixed;
   background-repeat: no-repeat;
 }
+
+
+/* input de fecha: que se vea bien en Safari y Chrome de iPhone */
+input[type="date"] {
+  color: white;
+  color-scheme: dark;
+  min-width: 150px;
+  min-height: 36px;
+}

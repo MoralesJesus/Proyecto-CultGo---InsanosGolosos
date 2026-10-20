@@ -11,7 +11,7 @@ const FiltroGenero: React.FC<FiltroGeneroProps> = ({ generoSeleccionado, generos
     <select
       value={generoSeleccionado}
       onChange={(e) => onCambio(e.target.value)}
-      style={{ padding: '8px', marginBottom: '16px' }}
+            style={{ padding: '8px' }}
     >
       {/* opcion para no filtrar por ningun genero */}
       <option value="">Todos los generos</option>

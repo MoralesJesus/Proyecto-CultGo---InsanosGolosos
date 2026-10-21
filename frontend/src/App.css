@@ -305,3 +305,76 @@ select:focus {
   margin: 0 auto;
   padding: 20px;
 }
+
+
+/* botones de musica en el detalle del evento */
+.botones-musica {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.boton-musica {
+  padding: 10px 18px;
+  border-radius: 6px;
+  background-color: #d9bf7e;
+  color: #2b2218;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+/* boton de Spotify: verde */
+.boton-spotify {
+  background-color: #1db954;
+  color: #000;
+}
+
+.boton-spotify:hover {
+  background-color: #1ed760;
+}
+
+/* boton de YouTube: rojo */
+.boton-youtube {
+  background-color: #e62117;
+  color: #fff;
+}
+
+.boton-youtube:hover {
+  background-color: #ff3b30;
+}
+
+.boton-musica:hover {
+  background-color: #e6d09a;
+  transform: translateY(-2px);
+}
+
+/* titulo con sombra para que resalte sobre la foto */
+h1.titulo-animado {
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+  letter-spacing: 1px;
+}
+
+.subtitulo {
+  color: #d9bf7e;
+  margin-bottom: 24px;
+}
+
+/* contador de eventos */
+.contador {
+  text-align: left;
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 12px;
+}
+
+/* pie de pagina */
+.pie-pagina {
+  margin-top: 40px;
+  padding: 16px 0;
+  text-align: center;
+  font-size: 14px;
+  opacity: 0.7;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}

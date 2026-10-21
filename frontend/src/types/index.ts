@@ -10,4 +10,7 @@ export interface Evento {
   latitud: number;
   longitud: number;
   descripcion: string;
+  // links a la musica del artista ( no todos los artistas los tienen)
+  enlaceSpotify?: string;
+  enlaceYoutube?: string;
 }

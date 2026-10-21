@@ -1,0 +1,21 @@
+return (
+  <div style="padding: 20px;">
+    <h1>CultGo!</h1>
+    <p>Encuentra eventos musicales en Oaxaca de Juarez</p>
+
+    {/* Botón temporal para migrar los datos quemados a PostgreSQL */}
+    <button 
+      onClick={migrarDatosABD} 
+      style="margin-bottom: 20px; padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer;"
+    >
+      Guardar eventos de prueba en PostgreSQL
+    </button>
+
+    <Buscador valor={busqueda} onCambio={setBusqueda} />
+    <FiltroGenero generoSeleccionado={genero} generos={generosDisponibles} onCambio={setGenero} />
+
+    {eventosFiltrados.map((evento) => (
+      <TarjetaEvento key={evento.id} evento={evento} />
+    ))}
+  </div>
+);

@@ -7,7 +7,7 @@ interface TarjetaEventoProps {
 
 const TarjetaEvento: React.FC<TarjetaEventoProps> = ({ evento }) => {
   return (
-    <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '16px', marginBottom: '12px' }}>
+    <div className="tarjeta-evento">
       <h3>{evento.nombre}</h3>
       <p><strong>Artista:</strong> {evento.artista}</p>
       <p><strong>Genero:</strong> {evento.genero}</p>

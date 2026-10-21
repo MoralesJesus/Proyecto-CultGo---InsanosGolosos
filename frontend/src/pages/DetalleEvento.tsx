@@ -12,22 +12,26 @@ const DetalleEvento = () => {
   if (!evento) {
     return (
       <div style={{ padding: '20px' }}>
-        <p>Evento no encontrado.</p>
-        <Link to="/">Volver al inicio</Link>
+        <div className="detalle-evento">
+          <p>Evento no encontrado.</p>
+          <Link to="/" className="enlace-volver">← Volver al inicio</Link>
+        </div>
       </div>
     );
   }
 
   return (
     <div style={{ padding: '20px' }}>
-      <Link to="/">← Volver al inicio</Link>
-      <h1>{evento.nombre}</h1>
-      <p><strong>Artista:</strong> {evento.artista}</p>
-      <p><strong>Genero:</strong> {evento.genero}</p>
-      <p><strong>Fecha:</strong> {evento.fecha} - {evento.hora}</p>
-      <p><strong>Lugar:</strong> {evento.lugar}</p>
-      <p><strong>Direccion:</strong> {evento.direccion}</p>
-      <p>{evento.descripcion}</p>
+      <div className="detalle-evento">
+        <Link to="/" className="enlace-volver">← Volver al inicio</Link>
+        <h1>{evento.nombre}</h1>
+        <p><strong>Artista:</strong> {evento.artista}</p>
+        <p><strong>Genero:</strong> {evento.genero}</p>
+        <p><strong>Fecha:</strong> {evento.fecha} - {evento.hora}</p>
+        <p><strong>Lugar:</strong> {evento.lugar}</p>
+        <p><strong>Direccion:</strong> {evento.direccion}</p>
+        <p>{evento.descripcion}</p>
+      </div>
     </div>
   );
 };

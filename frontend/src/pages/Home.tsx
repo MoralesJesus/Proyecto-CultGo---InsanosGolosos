@@ -83,7 +83,7 @@ const Home = () => {
     
 
   return (
-    <div style={{ padding: '20px' }}>
+      <div className="contenedor-home">
       {/* barra superior con el boton de login a la derecha */}
       <div style={{ position: 'relative', textAlign: 'center' }}>
         <h1 className="titulo-animado">CultGo!</h1>

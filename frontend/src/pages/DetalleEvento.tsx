@@ -31,6 +31,30 @@ const DetalleEvento = () => {
         <p><strong>Lugar:</strong> {evento.lugar}</p>
         <p><strong>Direccion:</strong> {evento.direccion}</p>
         <p>{evento.descripcion}</p>
+
+        {/* botones de musica: solo aparecen si el evento tiene el link */}
+        <div className="botones-musica">
+          {evento.enlaceSpotify && (
+            <a
+              href={evento.enlaceSpotify}
+              target="_blank"
+              rel="noopener noreferrer"
+               className="boton-musica boton-spotify"
+            >
+               Escuchar en Spotify
+            </a>
+          )}
+          {evento.enlaceYoutube && (
+            <a
+              href={evento.enlaceYoutube}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="boton-musica boton-youtube"
+            >
+               Ver en YouTube
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );

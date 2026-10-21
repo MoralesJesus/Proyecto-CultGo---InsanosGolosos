@@ -6,6 +6,7 @@ import FiltroGenero from '../components/filtros/FiltroGenero';
 import FiltroFecha from '../components/filtros/FiltroFecha';
 import { eventosPrueba } from '../data/eventosPrueba';
 import { calcularDistancia } from '../utils/distancia';
+import Footer from '../components/layout/Footer';
 
 
 
@@ -93,7 +94,7 @@ const Home = () => {
           </button>
         </Link>
       </div>
-      <p>Encuentra eventos musicales en Oaxaca de Juarez</p>
+        <p className="subtitulo">Encuentra eventos musicales en Oaxaca de Juarez</p>
 
                         <div style={{ marginBottom: '24px' }}>
         <Buscador valor={busqueda} onCambio={setBusqueda} />
@@ -117,6 +118,10 @@ const Home = () => {
         </button>
       </div>
 
+            <p className="contador">
+        {eventosFiltrados.length} {eventosFiltrados.length === 1 ? 'evento encontrado' : 'eventos encontrados'}
+      </p>
+
       {eventosFiltrados.length === 0 ? (
         <p>
           {fecha
@@ -130,6 +135,7 @@ const Home = () => {
           </Link>
         ))
       )}
+            <Footer />
     </div>
   );
 };

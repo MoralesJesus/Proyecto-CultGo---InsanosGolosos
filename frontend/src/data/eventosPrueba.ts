@@ -1,11 +1,12 @@
 import type { Evento } from '../types';
 
 // Datos de prueba, despues vendran del backend
+// Los links son busquedas con el nombre del artista; se cambiaran por los reales
 export const eventosPrueba: Evento[] = [
   {
     id: 1,
     nombre: 'Noche de Rock en el Centro',
-    artista: 'Los Alebrijes',
+    artista: 'Los Cometas del Sur',
     genero: 'Rock',
     fecha: '20/10/2026',
     hora: '8:00 PM',
@@ -13,7 +14,9 @@ export const eventosPrueba: Evento[] = [
     direccion: 'Av. Independencia 123',
     latitud: 17.0654,
     longitud: -96.7237,
-    descripcion: 'Concierto en vivo con bandas locales de rock alternativo.'
+    descripcion: 'Concierto en vivo con bandas locales de rock alternativo.',
+    enlaceSpotify: 'https://open.spotify.com/intl-es/artist/0ZmYEz80LBZfGzCnM520N9',
+    enlaceYoutube: 'https://www.youtube.com/results?search_query=Los+Cometas+del+Sur'
   },
   {
     id: 2,
@@ -26,7 +29,9 @@ export const eventosPrueba: Evento[] = [
     direccion: 'Reforma 501',
     latitud: 17.0678,
     longitud: -96.7245,
-    descripcion: 'Una velada intima de jazz en un espacio al aire libre.'
+    descripcion: 'Una velada intima de jazz en un espacio al aire libre.',
+    enlaceSpotify: 'https://open.spotify.com/search/Trio%20Nocturno',
+    enlaceYoutube: 'https://www.youtube.com/results?search_query=Trio+Nocturno'
   },
   {
     id: 3,
@@ -39,6 +44,8 @@ export const eventosPrueba: Evento[] = [
     direccion: 'Calle Morelos 200',
     latitud: 17.0601,
     longitud: -96.7266,
-    descripcion: 'Musica electronica con artistas locales y visuales en vivo.'
+    descripcion: 'Musica electronica con artistas locales y visuales en vivo.',
+    enlaceSpotify: 'https://open.spotify.com/search/DJ%20Sunu',
+    enlaceYoutube: 'https://www.youtube.com/results?search_query=DJ+Sunu'
   }
 ];

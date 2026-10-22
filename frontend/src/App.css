@@ -211,3 +211,170 @@ body {
   background-attachment: fixed;
   background-repeat: no-repeat;
 }
+
+
+/* input de fecha: que se vea bien en Safari y Chrome de iPhone */
+input[type="date"] {
+  color: white;
+  color-scheme: dark;
+  min-width: 150px;
+  min-height: 36px;
+}
+
+/* tarjeta de evento: borde, espacio y efecto al pasar el mouse */
+.tarjeta-evento {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+    background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  
+}
+
+.tarjeta-evento:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  background-color: rgba(30, 30, 30, 0.65);
+}
+
+/* botones: color dorado y efecto al pasar el mouse */
+button {
+  background-color: #e0a526;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+  background-color: #f2bb45;
+  transform: translateY(-2px);
+}
+
+/* boton desactivado (ej. mientras busca la ubicacion) */
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* buscador y menu de genero: fondo oscuro y borde suave */
+input,
+select {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  color-scheme: dark;
+}
+
+/* resalta el borde al hacer click en un campo */
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #e0a526;
+}
+
+/* pagina de detalle: tarjeta centrada con fondo oscuro */
+.detalle-evento {
+  max-width: 700px;
+  margin: 24px auto;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+/* link para volver al inicio */
+.enlace-volver {
+  color: #d9bf7e;
+  text-decoration: none;
+}
+
+.enlace-volver:hover {
+  text-decoration: underline;
+}
+
+
+/* contenedor del home: contenido centrado con ancho maximo */
+.contenedor-home {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+
+/* botones de musica en el detalle del evento */
+.botones-musica {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.boton-musica {
+  padding: 10px 18px;
+  border-radius: 6px;
+  background-color: #d9bf7e;
+  color: #2b2218;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+/* boton de Spotify: verde */
+.boton-spotify {
+  background-color: #1db954;
+  color: #000;
+}
+
+.boton-spotify:hover {
+  background-color: #1ed760;
+}
+
+/* boton de YouTube: rojo */
+.boton-youtube {
+  background-color: #e62117;
+  color: #fff;
+}
+
+.boton-youtube:hover {
+  background-color: #ff3b30;
+}
+
+.boton-musica:hover {
+  background-color: #e6d09a;
+  transform: translateY(-2px);
+}
+
+/* titulo con sombra para que resalte sobre la foto */
+h1.titulo-animado {
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+  letter-spacing: 1px;
+}
+
+.subtitulo {
+  color: #d9bf7e;
+  margin-bottom: 24px;
+}
+
+/* contador de eventos */
+.contador {
+  text-align: left;
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 12px;
+}
+
+/* pie de pagina */
+.pie-pagina {
+  margin-top: 40px;
+  padding: 16px 0;
+  text-align: center;
+  font-size: 14px;
+  opacity: 0.7;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}

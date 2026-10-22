@@ -8,6 +8,7 @@ import { eventosPrueba } from '../data/eventosPrueba';
 import { calcularDistancia } from '../utils/distancia';
 import { useAuth } from '../context/AuthContext';
 import { cerrarSesion } from '../services/firebase';
+import Footer from '../components/layout/Footer';
 
 
 
@@ -32,26 +33,31 @@ const Home = () => {
   const [genero, setGenero] = useState('');
   const [fecha, setFecha] = useState('');
   const [ubicacion, setUbicacion] = useState<{ lat: number; lon: number } | null>(null);
+  const [cargandoUbicacion, setCargandoUbicacion] = useState(false);
 
 
     // pide permiso al navegador y guarda la ubicacion del usuario
-  const obtenerUbicacion = () => {
+    const obtenerUbicacion = () => {
+    setCargandoUbicacion(true);
     navigator.geolocation.getCurrentPosition(
       (posicion) => {
         setUbicacion({
           lat: posicion.coords.latitude,
           lon: posicion.coords.longitude
         });
+        setCargandoUbicacion(false);
       },
       (error) => {
         console.error('Error al obtener ubicacion:', error);
-        alert('No se pudo obtener tu ubicacion. Revisa los permisos del navegador.');
+        alert('No se pudo obtener tu ubicacion. Intenta de nuevo.');
+        setCargandoUbicacion(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000, // espera hasta 10 segundos antes de rendirse
+        maximumAge: 0
       }
     );
-  };
-    // regresa al orden normal (por fecha), quitando la ubicacion guardada
-  const quitarUbicacion = () => {
-    setUbicacion(null);
   };
 
   // filtro combinado: texto + genero + fecha
@@ -81,7 +87,7 @@ const Home = () => {
     
 
   return (
-    <div style={{ padding: '20px' }}>
+      <div className="contenedor-home">
       {/* barra superior con el boton de login a la derecha */}
       <div style={{ position: 'relative', textAlign: 'center' }}>
         <h1 className="titulo-animado">CultGo!</h1>
@@ -100,24 +106,33 @@ const Home = () => {
           </Link>
         )}
       </div>
-      <p>Encuentra eventos musicales en Oaxaca de Juarez</p>
+        <p className="subtitulo">Encuentra eventos musicales en Oaxaca de Juarez</p>
 
-                  <div style={{ marginBottom: '12px' }}>
+                        <div style={{ marginBottom: '24px' }}>
         <Buscador valor={busqueda} onCambio={setBusqueda} />
-        <FiltroGenero generoSeleccionado={genero} generos={generosDisponibles} onCambio={setGenero} />
-        <FiltroFecha fechaSeleccionada={fecha} onCambio={setFecha} />
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+          <FiltroGenero generoSeleccionado={genero} generos={generosDisponibles} onCambio={setGenero} />
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '14px' }}>📅 Fecha:</span>
+            <FiltroFecha fechaSeleccionada={fecha} onCambio={setFecha} />
+            {fecha && (
+              <button onClick={() => setFecha('')} style={{ padding: '4px 10px', cursor: 'pointer' }}>
+                ✕ Limpiar fecha
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
-            <div style={{ textAlign: 'center', marginBottom: '20px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
-        <button onClick={obtenerUbicacion} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-          📍 Ordenar por cercania
+      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <button onClick={obtenerUbicacion} disabled={cargandoUbicacion} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+          {cargandoUbicacion ? '⏳ Buscando ubicacion...' : '📍 Ordenar por cercania'}
         </button>
-        {ubicacion && (
-          <button onClick={quitarUbicacion} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-            ❌ Quitar orden por cercania
-          </button>
-        )}
       </div>
+
+            <p className="contador">
+        {eventosFiltrados.length} {eventosFiltrados.length === 1 ? 'evento encontrado' : 'eventos encontrados'}
+      </p>
 
       {eventosFiltrados.length === 0 ? (
         <p>
@@ -132,6 +147,7 @@ const Home = () => {
           </Link>
         ))
       )}
+            <Footer />
     </div>
   );
 };

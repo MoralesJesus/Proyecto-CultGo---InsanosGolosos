@@ -13,4 +13,6 @@ export interface Evento {
   // links a la musica del artista ( no todos los artistas los tienen)
   enlaceSpotify?: string;
   enlaceYoutube?: string;
+    // foto del evento (opcional)
+  imagen?: string;
 }

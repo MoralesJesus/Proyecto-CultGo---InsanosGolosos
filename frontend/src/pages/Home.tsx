@@ -88,23 +88,22 @@ const Home = () => {
 
   return (
       <div className="contenedor-home">
-      {/* barra superior con el boton de login a la derecha */}
-      <div style={{ position: 'relative', textAlign: 'center' }}>
+      {user ? (
+        <div style={{ position: 'fixed', top: '16px', right: '16px', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10 }}>
+          <span>Hola, {user.displayName}</span>
+          <button onClick={cerrarSesion} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+            Cerrar sesion
+          </button>
+        </div>
+      ) : (
+        <Link to="/login">
+          <button style={{ position: 'fixed', top: '16px', right: '16px', padding: '8px 16px', cursor: 'pointer', zIndex: 10 }}>
+            Iniciar sesion
+          </button>
+        </Link>
+      )}
+      <div style={{ textAlign: 'center', paddingTop: '40px' }}>
         <h1 className="titulo-animado">CultGo!</h1>
-        {user ? (
-          <div style={{ position: 'absolute', top: '10px', right: '0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>Hola, {user.displayName}</span>
-            <button onClick={cerrarSesion} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-              Cerrar sesion
-            </button>
-          </div>
-        ) : (
-          <Link to="/login">
-            <button style={{ position: 'absolute', top: '10px', right: '0', padding: '8px 16px', cursor: 'pointer' }}>
-              Iniciar sesion
-            </button>
-          </Link>
-        )}
       </div>
         <p className="subtitulo">Encuentra eventos musicales en Oaxaca de Juarez</p>
 

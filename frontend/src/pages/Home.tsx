@@ -6,6 +6,8 @@ import FiltroGenero from '../components/filtros/FiltroGenero';
 import FiltroFecha from '../components/filtros/FiltroFecha';
 import { eventosPrueba } from '../data/eventosPrueba';
 import { calcularDistancia } from '../utils/distancia';
+import { useAuth } from '../context/AuthContext';
+import { cerrarSesion } from '../services/firebase';
 import Footer from '../components/layout/Footer';
 
 
@@ -26,6 +28,7 @@ const aFechaReal = (fecha: string) => {
 };
 
 const Home = () => {
+  const { user } = useAuth();
   const [busqueda, setBusqueda] = useState('');
   const [genero, setGenero] = useState('');
   const [fecha, setFecha] = useState('');
@@ -85,14 +88,22 @@ const Home = () => {
 
   return (
       <div className="contenedor-home">
-      {/* barra superior con el boton de login a la derecha */}
-      <div style={{ position: 'relative', textAlign: 'center' }}>
-        <h1 className="titulo-animado">CultGo!</h1>
+      {user ? (
+        <div style={{ position: 'fixed', top: '16px', right: '16px', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10 }}>
+          <span>Hola, {user.displayName}</span>
+          <button onClick={cerrarSesion} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+            Cerrar sesion
+          </button>
+        </div>
+      ) : (
         <Link to="/login">
-          <button style={{ position: 'absolute', top: '10px', right: '0', padding: '8px 16px', cursor: 'pointer' }}>
+          <button style={{ position: 'fixed', top: '16px', right: '16px', padding: '8px 16px', cursor: 'pointer', zIndex: 10 }}>
             Iniciar sesion
           </button>
         </Link>
+      )}
+      <div style={{ textAlign: 'center', paddingTop: '40px' }}>
+        <h1 className="titulo-animado">CultGo!</h1>
       </div>
         <p className="subtitulo">Encuentra eventos musicales en Oaxaca de Juarez</p>
 

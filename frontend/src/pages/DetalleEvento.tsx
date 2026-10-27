@@ -54,6 +54,18 @@ const DetalleEvento = () => {
                Ver en YouTube
             </a>
           )}
+          {evento.lugar && (
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                `${evento.lugar}, ${evento.direccion ?? ''} Oaxaca de Juarez`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="boton-musica boton-mapa"
+            >
+              📍 Ver en Google Maps
+            </a>
+          )}
         </div>
       </div>
     </div>

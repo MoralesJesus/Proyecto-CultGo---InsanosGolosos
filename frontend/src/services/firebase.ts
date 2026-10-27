@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCMwib5uWibmec000N5HOSTomnwWMAssjo",
@@ -17,3 +17,9 @@ export const auth = getAuth(app);
 
 // proveedor para que la gente inicie sesion con su cuenta de Google
 export const googleProvider = new GoogleAuthProvider();
+
+// abre la ventana de Google para iniciar sesión
+export const loginConGoogle = () => signInWithPopup(auth, googleProvider);
+
+// cierra la sesión actual
+export const cerrarSesion = () => signOut(auth);

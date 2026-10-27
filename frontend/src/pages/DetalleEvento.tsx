@@ -39,9 +39,9 @@ const DetalleEvento = () => {
               href={evento.enlaceSpotify}
               target="_blank"
               rel="noopener noreferrer"
-               className="boton-musica boton-spotify"
+              className="boton-musica boton-spotify"
             >
-               Escuchar en Spotify
+              Escuchar en Spotify
             </a>
           )}
           {evento.enlaceYoutube && (
@@ -51,7 +51,7 @@ const DetalleEvento = () => {
               rel="noopener noreferrer"
               className="boton-musica boton-youtube"
             >
-               Ver en YouTube
+              Ver en YouTube
             </a>
           )}
           {evento.lugar && (
@@ -67,6 +67,15 @@ const DetalleEvento = () => {
             </a>
           )}
         </div>
+
+        {/* foto del evento, abajo y centrada */}
+        {evento.imagen && (
+          <img
+            src={evento.imagen}
+            alt={evento.nombre}
+            className="imagen-detalle"
+          />
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,7 @@
 import type { Evento } from '../types';
+import fotoRock from '../assets/eventos/rock.jpg';
+import fotoJazz from '../assets/eventos/jazz.jpg';
+import fotoElectronica from '../assets/eventos/electronica.jpg';
 
 // Datos de prueba, despues vendran del backend
 // Los links son busquedas con el nombre del artista; se cambiaran por los reales
@@ -16,7 +19,8 @@ export const eventosPrueba: Evento[] = [
     longitud: -96.7237,
     descripcion: 'Concierto en vivo con bandas locales de rock alternativo.',
     enlaceSpotify: 'https://open.spotify.com/intl-es/artist/0ZmYEz80LBZfGzCnM520N9',
-    enlaceYoutube: 'https://www.youtube.com/results?search_query=Los+Cometas+del+Sur'
+        enlaceYoutube: 'https://www.youtube.com/results?search_query=Los+Cometas+del+Sur',
+    imagen: fotoRock
   },
   {
     id: 2,
@@ -31,7 +35,8 @@ export const eventosPrueba: Evento[] = [
     longitud: -96.7245,
     descripcion: 'Una velada intima de jazz en un espacio al aire libre.',
     enlaceSpotify: 'https://open.spotify.com/search/Trio%20Nocturno',
-    enlaceYoutube: 'https://www.youtube.com/results?search_query=Trio+Nocturno'
+    enlaceYoutube: 'https://www.youtube.com/results?search_query=Trio+Nocturno',
+    imagen: fotoJazz
   },
   {
     id: 3,
@@ -46,6 +51,7 @@ export const eventosPrueba: Evento[] = [
     longitud: -96.7266,
     descripcion: 'Musica electronica con artistas locales y visuales en vivo.',
     enlaceSpotify: 'https://open.spotify.com/search/DJ%20Sunu',
-    enlaceYoutube: 'https://www.youtube.com/results?search_query=DJ+Sunu'
+    enlaceYoutube: 'https://www.youtube.com/results?search_query=DJ+Sunu',
+  imagen: fotoElectronica
   }
 ];

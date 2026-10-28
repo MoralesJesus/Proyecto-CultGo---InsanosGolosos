@@ -413,6 +413,8 @@ h1.titulo-animado {
 
 
 
+
+
 /* ---- pantalla de login ---- */
 
 .pantalla-login {
@@ -426,7 +428,8 @@ h1.titulo-animado {
 }
 
 .marca-login {
-  margin-bottom: 36px;
+  margin-bottom: 32px;
+  animation: entradaTitulo 0.6s ease-out;
 }
 
 .marca-login .titulo-animado {
@@ -448,7 +451,6 @@ h1.titulo-animado {
   overflow: hidden;
 }
 
-/* franja decorativa superior */
 .tarjeta-login::before {
   content: '';
   position: absolute;
@@ -476,8 +478,24 @@ h1.titulo-animado {
   }
 }
 
+/* encabezado de la tarjeta: anima cada vez que cambia de modo */
+.encabezado-login {
+  animation: deslizarEntrada 0.35s ease-out;
+}
+
+@keyframes deslizarEntrada {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .tarjeta-login h2 {
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 700;
   margin: 0 0 6px;
 }
@@ -486,7 +504,103 @@ h1.titulo-animado {
   opacity: 0.75;
   font-size: 14px;
   line-height: 1.5;
-  margin: 0 0 28px;
+  margin: 0 0 26px;
+}
+
+/* campos con icono dentro */
+.formulario-login {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.campo-con-icono {
+  position: relative;
+  display: flex;
+  align-items: center;
+  animation: deslizarEntrada 0.3s ease-out;
+}
+
+.campo-con-icono svg {
+  position: absolute;
+  left: 14px;
+  width: 16px;
+  height: 16px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.campo-con-icono input {
+  width: 100%;
+  padding: 12px 14px 12px 40px;
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.campo-con-icono input:focus {
+  box-shadow: 0 0 0 3px rgba(224, 165, 38, 0.18);
+}
+
+.boton-enviar {
+  width: 100%;
+  padding: 13px;
+  margin-top: 4px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.alternar-modo {
+  font-size: 13px;
+  margin-top: 16px;
+  opacity: 0.85;
+}
+
+.alternar-modo button {
+  background: none;
+  color: #e0a526;
+  padding: 0;
+  font-weight: 600;
+  text-decoration: none;
+  position: relative;
+}
+
+.alternar-modo button::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background-color: #e0a526;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.25s ease;
+}
+
+.alternar-modo button:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.separador-login {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+  opacity: 0.4;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.separador-login::before,
+.separador-login::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: currentColor;
 }
 
 .boton-google {
@@ -500,11 +614,13 @@ h1.titulo-animado {
   background-color: #fff;
   color: #1a1a1a;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .boton-google:hover:not(:disabled) {
   background-color: #f5f5f5;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.32);
+  transform: translateY(-1px);
 }
 
 .icono-google {
@@ -513,38 +629,30 @@ h1.titulo-animado {
   flex-shrink: 0;
 }
 
-.separador-login {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 24px 0;
-  opacity: 0.4;
-  font-size: 12px;
-}
-
-.separador-login::before,
-.separador-login::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background-color: currentColor;
-}
-
 .pie-login {
   font-size: 12px;
-  opacity: 0.55;
+  opacity: 0.5;
   line-height: 1.5;
+  margin-top: 20px;
 }
 
 .mensaje-error {
-  margin-top: 18px;
+  margin-top: 16px;
   padding: 10px 14px;
   border-radius: 8px;
   background-color: rgba(230, 33, 23, 0.12);
   border: 1px solid rgba(230, 33, 23, 0.35);
   color: #ff8a80;
   font-size: 13px;
-  animation: aparecerTarjeta 0.3s ease-out;
+  animation: sacudida 0.4s ease;
+}
+
+@keyframes sacudida {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
 }
 
 /* spinner mientras conecta */

@@ -4,7 +4,7 @@ import TarjetaEvento from '../components/eventos/TarjetaEvento';
 import Buscador from '../components/buscador/Buscador';
 import FiltroGenero from '../components/filtros/FiltroGenero';
 import FiltroFecha from '../components/filtros/FiltroFecha';
-import { eventosPrueba } from '../data/eventosPrueba';
+import { useEventos } from '../context/useEventos';
 import { calcularDistancia } from '../utils/distancia';
 import { useAuth } from '../context/AuthContext';
 import { cerrarSesion } from '../services/firebase';
@@ -12,8 +12,6 @@ import Footer from '../components/layout/Footer';
 
 
 
-// lista de generos disponibles, sacada de los eventos (sin repetidos)
-const generosDisponibles = [...new Set(eventosPrueba.map((e) => e.genero))];
 
 // convierte "20/10/2026" a "2026-10-20" para poder comparar con el input tipo date
 const convertirFecha = (fecha: string) => {
@@ -29,6 +27,10 @@ const aFechaReal = (fecha: string) => {
 
 const Home = () => {
   const { user } = useAuth();
+  const { eventos, cargando } = useEventos();
+
+  // lista de generos disponibles, sacada de los eventos (sin repetidos)
+  const generosDisponibles = [...new Set(eventos.map((e) => e.genero))];
   const [busqueda, setBusqueda] = useState('');
   const [genero, setGenero] = useState('');
   const [fecha, setFecha] = useState('');
@@ -61,7 +63,7 @@ const Home = () => {
   };
 
   // filtro combinado: texto + genero + fecha
-    const eventosFiltrados = eventosPrueba
+    const eventosFiltrados = eventos
     .filter((evento) => {
       const coincideTexto =
         evento.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -133,7 +135,9 @@ const Home = () => {
         {eventosFiltrados.length} {eventosFiltrados.length === 1 ? 'evento encontrado' : 'eventos encontrados'}
       </p>
 
-      {eventosFiltrados.length === 0 ? (
+      {cargando ? (
+        <p>Cargando eventos...</p>
+      ) : eventosFiltrados.length === 0 ? (
         <p>
           {fecha
             ? `No hay eventos disponibles en la fecha ${fecha}.`

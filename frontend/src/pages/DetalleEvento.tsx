@@ -1,12 +1,15 @@
 import { useParams, Link } from 'react-router-dom';
-import { eventosPrueba } from '../data/eventosPrueba';
+import { useEventos } from '../context/useEventos';
 
 const DetalleEvento = () => {
   // toma el id que viene en la url, ej: /evento/2 -> id = "2"
   const { id } = useParams();
+  const { eventos, cargando } = useEventos();
 
   // busca el evento cuyo id coincida (convertimos a numero porque useParams da texto)
-  const evento = eventosPrueba.find((e) => e.id === Number(id));
+  const evento = eventos.find((e) => e.id === Number(id));
+
+  if (cargando) return <p>Cargando...</p>;
 
   // si no se encuentra el evento (id invalido), mostramos un mensaje
   if (!evento) {

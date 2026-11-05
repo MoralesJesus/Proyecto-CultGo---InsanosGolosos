@@ -10,4 +10,4 @@ CREATE TABLE eventos_cultgo (
     latitud DECIMAL(10, 6),
     longitud DECIMAL(10, 6),
     descripcion TEXT
-);}
+);

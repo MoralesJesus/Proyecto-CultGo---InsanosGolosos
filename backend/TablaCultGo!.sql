@@ -9,5 +9,8 @@ CREATE TABLE eventos_cultgo (
     direccion VARCHAR(255),
     latitud DECIMAL(10, 6),
     longitud DECIMAL(10, 6),
-    descripcion TEXT
+    descripcion TEXT,
+    enlace_spotify VARCHAR(500),
+    enlace_youtube VARCHAR(500),
+    imagen TEXT
 );

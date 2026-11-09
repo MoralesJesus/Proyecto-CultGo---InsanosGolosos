@@ -74,7 +74,7 @@ const Login = () => {
     <div className="pantalla-login">
       <div className="marca-login">
         <h1 className="titulo-animado">CultGo!</h1>
-        <p className="subtitulo">Encuentra eventos musicales en Oaxaca de Juarez</p>
+        <p className="subtitulo">Encuentra eventos musicales en Oaxaca de Juárez</p>
       </div>
 
       <div className="tarjeta-login">

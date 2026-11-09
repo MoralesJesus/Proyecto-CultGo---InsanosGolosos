@@ -29,10 +29,10 @@ const DetalleEvento = () => {
         <Link to="/" className="enlace-volver">← Volver al inicio</Link>
         <h1>{evento.nombre}</h1>
         <p><strong>Artista:</strong> {evento.artista}</p>
-        <p><strong>Genero:</strong> {evento.genero}</p>
+        <p><strong>Género:</strong> {evento.genero}</p>
         <p><strong>Fecha:</strong> {evento.fecha} - {evento.hora}</p>
         <p><strong>Lugar:</strong> {evento.lugar}</p>
-        <p><strong>Direccion:</strong> {evento.direccion}</p>
+        <p><strong>Dirección:</strong> {evento.direccion}</p>
         <p>{evento.descripcion}</p>
 
         {/* botones de musica: solo aparecen si el evento tiene el link */}

@@ -51,7 +51,7 @@ const Home = () => {
       },
       (error) => {
         console.error('Error al obtener ubicacion:', error);
-        alert('No se pudo obtener tu ubicacion. Intenta de nuevo.');
+        alert('No se pudo obtener tu ubicación. Intenta de nuevo.');
         setCargandoUbicacion(false);
       },
       {
@@ -90,24 +90,25 @@ const Home = () => {
 
   return (
       <div className="contenedor-home">
-      {user ? (
-        <div style={{ position: 'fixed', top: '16px', right: '16px', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10 }}>
-          <span>Hola, {user.displayName}</span>
-          <button onClick={cerrarSesion} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-            Cerrar sesion
-          </button>
-        </div>
-      ) : (
-        <Link to="/login">
-          <button style={{ position: 'fixed', top: '16px', right: '16px', padding: '8px 16px', cursor: 'pointer', zIndex: 10 }}>
-            Iniciar sesion
-          </button>
-        </Link>
-      )}
-      <div style={{ textAlign: 'center', paddingTop: '40px' }}>
+      {/* barra del usuario: va dentro de la pagina (no fija) para que no se encime al bajar */}
+      <header className="barra-usuario">
+        {user ? (
+          <>
+            <span>Hola, {user.displayName || user.email}</span>
+            <button onClick={cerrarSesion} className="boton-barra">
+              Cerrar sesión
+            </button>
+          </>
+        ) : (
+          <Link to="/login" className="boton-barra">
+            Iniciar sesión
+          </Link>
+        )}
+      </header>
+      <div style={{ textAlign: 'center' }}>
         <h1 className="titulo-animado">CultGo!</h1>
       </div>
-        <p className="subtitulo">Encuentra eventos musicales en Oaxaca de Juarez</p>
+        <p className="subtitulo">Encuentra eventos musicales en Oaxaca de Juárez</p>
 
                         <div style={{ marginBottom: '24px' }}>
         <Buscador valor={busqueda} onCambio={setBusqueda} />
@@ -127,7 +128,7 @@ const Home = () => {
 
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <button onClick={obtenerUbicacion} disabled={cargandoUbicacion} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-          {cargandoUbicacion ? '⏳ Buscando ubicacion...' : '📍 Ordenar por cercania'}
+          {cargandoUbicacion ? '⏳ Buscando ubicación...' : '📍 Ordenar por cercanía'}
         </button>
       </div>
 

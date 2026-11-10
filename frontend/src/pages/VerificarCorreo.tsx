@@ -1,11 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { reenviarVerificacion, cerrarSesion, auth } from "../services/firebase";
+import { useAuth } from "../context/AuthContext";
 
 const VerificarCorreo = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const [enviado, setEnviado] = useState(false);
   const [cargando, setCargando] = useState(false);
+
+  // si ya no hay sesion, regresa al login
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/login", { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  // revisa cada 3 segundos si el usuario ya verifico su correo,
+  // y lo manda a la pagina principal en cuanto lo haga
+  useEffect(() => {
+    const intervalo = setInterval(async () => {
+      await auth.currentUser?.reload();
+      if (auth.currentUser?.emailVerified) {
+        clearInterval(intervalo);
+        // recarga para que el estado de sesion se actualice con el correo ya verificado
+        window.location.href = "/";
+      }
+    }, 3000);
+
+    return () => clearInterval(intervalo);
+  }, []);
 
   const handleReenviar = async () => {
     setCargando(true);
@@ -19,14 +43,9 @@ const VerificarCorreo = () => {
     }
   };
 
-  const handleYaVerifique = async () => {
-    // recarga los datos del usuario para ver si ya se verificó
-    await auth.currentUser?.reload();
-    if (auth.currentUser?.emailVerified) {
-      navigate("/");
-    } else {
-      alert("Todavía no detectamos la verificación. Revisa tu correo e inténtalo de nuevo.");
-    }
+  const handleVolver = async () => {
+    await cerrarSesion();
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -38,13 +57,9 @@ const VerificarCorreo = () => {
       <div className="tarjeta-login">
         <h2>Verifica tu correo</h2>
         <p className="texto-ayuda">
-          Te enviamos un enlace de verificación a <strong>{auth.currentUser?.email}</strong>.
-          Ábrelo para poder continuar.
+          Te enviamos un enlace de verificación a <strong>{user?.email}</strong>.
+          Ábrelo para continuar; esta página se actualizará sola en cuanto lo confirmes.
         </p>
-
-        <button className="boton-enviar" onClick={handleYaVerifique} style={{ marginBottom: "10px" }}>
-          Ya verifiqué mi correo
-        </button>
 
         <button
           className="boton-google"
@@ -55,8 +70,8 @@ const VerificarCorreo = () => {
         </button>
 
         <p className="alternar-modo" style={{ marginTop: "20px" }}>
-          <button type="button" onClick={cerrarSesion}>
-            Cerrar sesión
+          <button type="button" onClick={handleVolver}>
+            ← Volver al inicio de sesión
           </button>
         </p>
       </div>

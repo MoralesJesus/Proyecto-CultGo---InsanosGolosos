@@ -4,6 +4,7 @@ import './styles/admin.css';
 import Home from './pages/Home';
 import DetalleEvento from './pages/DetalleEvento';
 import Login from './pages/Login';
+import VerificarCorreo from './pages/VerificarCorreo';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 import AdminLayout from './components/layout/AdminLayout';
@@ -32,6 +33,7 @@ function App() {
           }
         />
         <Route path="/login" element={<Login />} />
+        <Route path="/verificar-correo" element={<VerificarCorreo />} />
         <Route
           path="/admin"
           element={

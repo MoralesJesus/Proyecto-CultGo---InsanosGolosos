@@ -4,7 +4,7 @@ import TarjetaEvento from '../components/eventos/TarjetaEvento';
 import Buscador from '../components/buscador/Buscador';
 import FiltroGenero from '../components/filtros/FiltroGenero';
 import FiltroFecha from '../components/filtros/FiltroFecha';
-import { eventosPrueba } from '../data/eventosPrueba';
+import { useEventos } from '../context/useEventos';
 import { calcularDistancia } from '../utils/distancia';
 import { useAuth } from '../context/AuthContext';
 import { cerrarSesion } from '../services/firebase';
@@ -12,8 +12,6 @@ import Footer from '../components/layout/Footer';
 
 
 
-// lista de generos disponibles, sacada de los eventos (sin repetidos)
-const generosDisponibles = [...new Set(eventosPrueba.map((e) => e.genero))];
 
 // convierte "20/10/2026" a "2026-10-20" para poder comparar con el input tipo date
 const convertirFecha = (fecha: string) => {
@@ -29,6 +27,10 @@ const aFechaReal = (fecha: string) => {
 
 const Home = () => {
   const { user } = useAuth();
+  const { eventos, cargando } = useEventos();
+
+  // lista de generos disponibles, sacada de los eventos (sin repetidos)
+  const generosDisponibles = [...new Set(eventos.map((e) => e.genero))];
   const [busqueda, setBusqueda] = useState('');
   const [genero, setGenero] = useState('');
   const [fecha, setFecha] = useState('');
@@ -49,7 +51,7 @@ const Home = () => {
       },
       (error) => {
         console.error('Error al obtener ubicacion:', error);
-        alert('No se pudo obtener tu ubicacion. Intenta de nuevo.');
+        alert('No se pudo obtener tu ubicación. Intenta de nuevo.');
         setCargandoUbicacion(false);
       },
       {
@@ -61,7 +63,7 @@ const Home = () => {
   };
 
   // filtro combinado: texto + genero + fecha
-    const eventosFiltrados = eventosPrueba
+    const eventosFiltrados = eventos
     .filter((evento) => {
       const coincideTexto =
         evento.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -88,24 +90,25 @@ const Home = () => {
 
   return (
       <div className="contenedor-home">
-      {user ? (
-        <div style={{ position: 'fixed', top: '16px', right: '16px', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10 }}>
-          <span>Hola, {user.displayName}</span>
-          <button onClick={cerrarSesion} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-            Cerrar sesion
-          </button>
-        </div>
-      ) : (
-        <Link to="/login">
-          <button style={{ position: 'fixed', top: '16px', right: '16px', padding: '8px 16px', cursor: 'pointer', zIndex: 10 }}>
-            Iniciar sesion
-          </button>
-        </Link>
-      )}
-      <div style={{ textAlign: 'center', paddingTop: '40px' }}>
+      {/* barra del usuario: va dentro de la pagina (no fija) para que no se encime al bajar */}
+      <header className="barra-usuario">
+        {user ? (
+          <>
+            <span>Hola, {user.displayName || user.email}</span>
+            <button onClick={cerrarSesion} className="boton-barra">
+              Cerrar sesión
+            </button>
+          </>
+        ) : (
+          <Link to="/login" className="boton-barra">
+            Iniciar sesión
+          </Link>
+        )}
+      </header>
+      <div style={{ textAlign: 'center' }}>
         <h1 className="titulo-animado">CultGo!</h1>
       </div>
-        <p className="subtitulo">Encuentra eventos musicales en Oaxaca de Juarez</p>
+        <p className="subtitulo">Encuentra eventos musicales en Oaxaca de Juárez</p>
 
                         <div style={{ marginBottom: '24px' }}>
         <Buscador valor={busqueda} onCambio={setBusqueda} />
@@ -125,7 +128,7 @@ const Home = () => {
 
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <button onClick={obtenerUbicacion} disabled={cargandoUbicacion} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-          {cargandoUbicacion ? '⏳ Buscando ubicacion...' : '📍 Ordenar por cercania'}
+          {cargandoUbicacion ? '⏳ Buscando ubicación...' : '📍 Ordenar por cercanía'}
         </button>
       </div>
 
@@ -133,7 +136,9 @@ const Home = () => {
         {eventosFiltrados.length} {eventosFiltrados.length === 1 ? 'evento encontrado' : 'eventos encontrados'}
       </p>
 
-      {eventosFiltrados.length === 0 ? (
+      {cargando ? (
+        <p>Cargando eventos...</p>
+      ) : eventosFiltrados.length === 0 ? (
         <p>
           {fecha
             ? `No hay eventos disponibles en la fecha ${fecha}.`

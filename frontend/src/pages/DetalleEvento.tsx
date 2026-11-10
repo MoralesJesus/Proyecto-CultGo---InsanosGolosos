@@ -1,12 +1,15 @@
 import { useParams, Link } from 'react-router-dom';
-import { eventosPrueba } from '../data/eventosPrueba';
+import { useEventos } from '../context/useEventos';
 
 const DetalleEvento = () => {
   // toma el id que viene en la url, ej: /evento/2 -> id = "2"
   const { id } = useParams();
+  const { eventos, cargando } = useEventos();
 
   // busca el evento cuyo id coincida (convertimos a numero porque useParams da texto)
-  const evento = eventosPrueba.find((e) => e.id === Number(id));
+  const evento = eventos.find((e) => e.id === Number(id));
+
+  if (cargando) return <p>Cargando...</p>;
 
   // si no se encuentra el evento (id invalido), mostramos un mensaje
   if (!evento) {
@@ -26,10 +29,10 @@ const DetalleEvento = () => {
         <Link to="/" className="enlace-volver">← Volver al inicio</Link>
         <h1>{evento.nombre}</h1>
         <p><strong>Artista:</strong> {evento.artista}</p>
-        <p><strong>Genero:</strong> {evento.genero}</p>
+        <p><strong>Género:</strong> {evento.genero}</p>
         <p><strong>Fecha:</strong> {evento.fecha} - {evento.hora}</p>
         <p><strong>Lugar:</strong> {evento.lugar}</p>
-        <p><strong>Direccion:</strong> {evento.direccion}</p>
+        <p><strong>Dirección:</strong> {evento.direccion}</p>
         <p>{evento.descripcion}</p>
 
         {/* botones de musica: solo aparecen si el evento tiene el link */}

@@ -20,7 +20,7 @@ const TarjetaEvento: React.FC<TarjetaEventoProps> = ({ evento }) => {
       <div className="tarjeta-contenido">
         <h3>{evento.nombre}</h3>
         <p><strong>Artista:</strong> {evento.artista}</p>
-        <p><strong>Genero:</strong> {evento.genero}</p>
+        <p><strong>Género:</strong> {evento.genero}</p>
         <p><strong>Fecha:</strong> {evento.fecha} - {evento.hora}</p>
         <p><strong>Lugar:</strong> {evento.lugar}</p>
         <p>{evento.descripcion}</p>

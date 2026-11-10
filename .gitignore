@@ -1,0 +1,21 @@
+# Dependencias (se reinstalan con "npm install")
+node_modules/
+
+# Variables de entorno y claves: nunca se suben
+.env
+.env.*
+!.env.example
+
+# Builds
+dist/
+dist-ssr/
+
+# Logs
+*.log
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/

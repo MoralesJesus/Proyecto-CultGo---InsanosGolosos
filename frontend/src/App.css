@@ -306,6 +306,42 @@ select:focus {
   padding: 20px;
 }
 
+/* barra con el saludo y el boton de sesion, arriba a la derecha */
+.barra-usuario {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: #f3f4f6;
+}
+
+.boton-barra {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 15px;
+  background-color: #e0a526;
+  color: #1a1a1a;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.boton-barra:hover {
+  background-color: #f2bb45;
+  transform: translateY(-2px);
+}
+
+/* contorno visible al llegar con la tecla Tab */
+.boton-barra:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
 
 /* botones de musica en el detalle del evento */
 .botones-musica {

@@ -7,6 +7,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
+  sendEmailVerification,
 } from "firebase/auth";
 
 const firebaseConfig = {
@@ -32,7 +33,8 @@ export const loginConGoogle = () => signInWithPopup(auth, googleProvider);
 // cierra la sesión actual
 export const cerrarSesion = () => signOut(auth);
 
-// crea una cuenta nueva con correo y contraseña, y le asigna un nombre
+// crea una cuenta nueva con correo y contraseña, le asigna un nombre
+// y le envia un correo de verificacion
 export const registrarConCorreo = async (
   correo: string,
   contrasena: string,
@@ -40,9 +42,17 @@ export const registrarConCorreo = async (
 ) => {
   const credencial = await createUserWithEmailAndPassword(auth, correo, contrasena);
   await updateProfile(credencial.user, { displayName: nombre });
+  await sendEmailVerification(credencial.user);
   return credencial;
 };
 
 // inicia sesión con una cuenta ya existente
 export const loginConCorreo = (correo: string, contrasena: string) =>
   signInWithEmailAndPassword(auth, correo, contrasena);
+
+// vuelve a enviar el correo de verificacion (por si no llego o expiro)
+export const reenviarVerificacion = () => {
+  if (auth.currentUser) {
+    return sendEmailVerification(auth.currentUser);
+  }
+};

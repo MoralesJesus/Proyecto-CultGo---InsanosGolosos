@@ -3,6 +3,7 @@ import './App.css';
 import Home from './pages/Home';
 import DetalleEvento from './pages/DetalleEvento';
 import Login from './pages/Login';
+import VerificarCorreo from './pages/VerificarCorreo';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
           }
         />
         <Route path="/login" element={<Login />} />
+        <Route path="/verificar-correo" element={<VerificarCorreo />} />
       </Routes>
     </BrowserRouter>
   );

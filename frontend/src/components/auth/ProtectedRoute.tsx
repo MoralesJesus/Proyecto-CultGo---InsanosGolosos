@@ -7,5 +7,12 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (loading) return <p>Cargando...</p>;
   if (!user) return <Navigate to="/login" replace />;
+
+  // si el usuario entro con correo/contraseña y no ha verificado su correo,
+  // lo mandamos a la pantalla de verificacion antes de dejarlo pasar
+  if (!user.emailVerified) {
+    return <Navigate to="/verificar-correo" replace />;
+  }
+
   return <>{children}</>;
 }

@@ -7,18 +7,21 @@ import {
   crearEvento,
   actualizarEvento,
   eliminarEvento,
-  restablecerEventos,
 } from "../services/eventosService";
 
 export function EventosProvider({ children }: { children: ReactNode }) {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    obtenerEventos().then((lista) => {
-      setEventos(lista);
-      setCargando(false);
-    });
+    obtenerEventos()
+      .then(setEventos)
+      .catch((err) => {
+        console.error("Error al cargar eventos:", err);
+        setError("No se pudieron cargar los eventos. Revisa que el servidor esté encendido.");
+      })
+      .finally(() => setCargando(false));
   }, []);
 
   const agregar = async (datos: Omit<Evento, "id">) => {
@@ -36,14 +39,8 @@ export function EventosProvider({ children }: { children: ReactNode }) {
     setEventos(await obtenerEventos());
   };
 
-  const restablecer = async () => {
-    setEventos(await restablecerEventos());
-  };
-
   return (
-    <EventosContext.Provider
-      value={{ eventos, cargando, agregar, editar, borrar, restablecer }}
-    >
+    <EventosContext.Provider value={{ eventos, cargando, error, agregar, editar, borrar }}>
       {children}
     </EventosContext.Provider>
   );

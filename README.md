@@ -399,3 +399,19 @@ Al finalizar el proyecto esperamos tener una página web funcional que permita a
 La idea principal de CultGo! sería juntar en una sola plataforma información que normalmente se encuentra repartida en diferentes lugares y facilitar que las personas puedan descubrir conciertos, artistas y eventos musicales de la ciudad.
 
 Por ahora, el proyecto se encuentra en etapa de planeación, por lo que todavía no comenzaríamos con la programación. Esta propuesta nos serviría como base para posteriormente comenzar con el diseño, la base de datos y el desarrollo de la aplicación.
+
+## Cómo correr el proyecto en local
+
+### Backend (Node.js + PostgreSQL)
+1. Crea la base `cultgo` y la tabla con `backend/TablaCultGo!.sql`.
+2. Copia `backend/.env.example` a `backend/.env` y llena `DB_PASSWORD` y `ADMIN_CORREOS` (los mismos correos de `frontend/src/config/admins.ts`).
+3. En `backend/`: `npm install`, `npm run migrar` y `npm start` (puerto 3000).
+
+### Frontend (React + Vite)
+En `frontend/`: `npm install` y `npm run dev` (puerto 5173). Si el backend no está en `http://localhost:3000`, copia `frontend/.env.example` a `frontend/.env` y cambia `VITE_API_URL`.
+
+### Administración de eventos
+- El panel `/admin` usa el mismo login de Firebase. Para crear, editar o eliminar eventos el frontend manda el token de Firebase y el backend revisa que el correo esté en `ADMIN_CORREOS` y que esté verificado.
+- En **Eventos → Expirados** aparecen los eventos cuya fecha ya pasó; desde ahí se pueden reprogramar o cambiar de estado (activo, reprogramado, cancelado, finalizado).
+- Rutas: `GET /api/eventos` (pública); `POST /api/eventos`, `PUT|PATCH|DELETE /api/eventos/:id` (alias `/api/events/:id`) requieren `Authorization: Bearer <token de Firebase>`.
+- Para probar sin cuentas reales se puede usar el emulador de Firebase Auth: arranca el backend con `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` y el frontend con `VITE_FIREBASE_AUTH_EMULATOR=http://127.0.0.1:9099`.

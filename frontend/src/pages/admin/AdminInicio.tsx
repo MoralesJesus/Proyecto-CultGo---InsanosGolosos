@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEventos } from "../../context/useEventos";
+import { esExpirado } from "../../utils/formato";
 
 export default function AdminInicio() {
   const { eventos } = useEventos();
@@ -7,6 +8,7 @@ export default function AdminInicio() {
   const totalEventos = eventos.length;
   const totalGeneros = new Set(eventos.map((e) => e.genero)).size;
   const totalArtistas = new Set(eventos.map((e) => e.artista)).size;
+  const totalExpirados = eventos.filter((e) => esExpirado(e.fecha)).length;
 
   return (
     <div>
@@ -26,6 +28,10 @@ export default function AdminInicio() {
           <span>Géneros</span>
           <strong>{totalGeneros}</strong>
         </div>
+        <Link to="/admin/eventos?filtro=expirados" className="admin-tarjeta admin-tarjeta-expirados">
+          <span>Expirados</span>
+          <strong>{totalExpirados}</strong>
+        </Link>
       </section>
 
       <section className="admin-seccion">

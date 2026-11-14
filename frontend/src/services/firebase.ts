@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
+  connectAuthEmulator,
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
@@ -23,6 +24,13 @@ const app = initializeApp(firebaseConfig);
 
 // esto es lo que vamos a usar para manejar el login/logout
 export const auth = getAuth(app);
+
+// para pruebas locales: si VITE_FIREBASE_AUTH_EMULATOR tiene una URL (ej. http://127.0.0.1:9099)
+// el login usa el emulador de Firebase en lugar de las cuentas reales
+const emuladorAuth = import.meta.env.VITE_FIREBASE_AUTH_EMULATOR;
+if (emuladorAuth) {
+  connectAuthEmulator(auth, emuladorAuth, { disableWarnings: true });
+}
 
 // proveedor para que la gente inicie sesion con su cuenta de Google
 export const googleProvider = new GoogleAuthProvider();

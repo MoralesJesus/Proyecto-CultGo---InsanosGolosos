@@ -15,4 +15,8 @@ export interface Evento {
   enlaceYoutube?: string;
     // foto del evento (opcional)
   imagen?: string;
+  // estado del evento (lo guarda el backend; si no viene se toma como "activo")
+  estado?: EstadoEvento;
 }
+
+export type EstadoEvento = 'activo' | 'reprogramado' | 'cancelado' | 'finalizado';

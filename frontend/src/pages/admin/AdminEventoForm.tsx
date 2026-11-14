@@ -2,8 +2,15 @@ import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEventos } from "../../context/useEventos";
-import { a12Horas, a24Horas, dmaAIso, isoADma } from "../../utils/formato";
-import type { Evento } from "../../types";
+import { a12Horas, a24Horas, dmaAIso, esExpirado, isoADma } from "../../utils/formato";
+import type { EstadoEvento, Evento } from "../../types";
+
+const ESTADOS: { valor: EstadoEvento; texto: string }[] = [
+  { valor: "activo", texto: "Activo" },
+  { valor: "reprogramado", texto: "Reprogramado" },
+  { valor: "cancelado", texto: "Cancelado" },
+  { valor: "finalizado", texto: "Finalizado" },
+];
 
 // valores al crear un evento nuevo (coordenadas del centro de Oaxaca)
 const vacio = {
@@ -20,6 +27,7 @@ const vacio = {
   enlaceSpotify: "",
   enlaceYoutube: "",
   imagen: "",
+  estado: "activo" as EstadoEvento,
 };
 
 function Formulario({ evento }: { evento?: Evento }) {
@@ -45,13 +53,17 @@ function Formulario({ evento }: { evento?: Evento }) {
           enlaceSpotify: evento.enlaceSpotify ?? "",
           enlaceYoutube: evento.enlaceYoutube ?? "",
           imagen: evento.imagen ?? "",
+          estado: evento.estado ?? "activo",
         }
       : vacio
   );
 
+  // al editar un evento cuya fecha ya paso, se avisa (pero se deja guardar)
+  const fechaPasada = datos.fecha !== "" && esExpirado(isoADma(datos.fecha));
+
   const generos = [...new Set(eventos.map((e) => e.genero))];
 
-  const cambiar = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const cambiar = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setDatos({ ...datos, [e.target.name]: e.target.value });
   };
 
@@ -103,6 +115,7 @@ function Formulario({ evento }: { evento?: Evento }) {
       enlaceSpotify: datos.enlaceSpotify.trim() || undefined,
       enlaceYoutube: datos.enlaceYoutube.trim() || undefined,
       imagen: datos.imagen.trim() || undefined,
+      estado: datos.estado,
     };
 
     setGuardando(true);
@@ -113,8 +126,8 @@ function Formulario({ evento }: { evento?: Evento }) {
         await agregar(nuevo);
       }
       navigate("/admin/eventos");
-    } catch {
-      setError("No se pudo guardar. Intenta de nuevo.");
+    } catch (err) {
+      setError(err instanceof Error ? `No se pudo guardar: ${err.message}` : "No se pudo guardar. Intenta de nuevo.");
       setGuardando(false);
     }
   };
@@ -162,6 +175,24 @@ function Formulario({ evento }: { evento?: Evento }) {
         <label className="admin-campo">
           <span>Hora *</span>
           <input type="time" name="hora" value={datos.hora} onChange={cambiar} />
+        </label>
+
+        {fechaPasada && (
+          <p className="admin-aviso ancho-texto">
+            La fecha es anterior a hoy, así que el evento aparece como expirado.
+            Cámbiala si quieres reprogramarlo; también puedes guardarlo así.
+          </p>
+        )}
+
+        <label className="admin-campo">
+          <span>Estado</span>
+          <select name="estado" value={datos.estado} onChange={cambiar}>
+            {ESTADOS.map((e) => (
+              <option key={e.valor} value={e.valor}>
+                {e.texto}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="admin-campo">

@@ -27,7 +27,7 @@ const aFechaReal = (fecha: string) => {
 
 const Home = () => {
   const { user } = useAuth();
-  const { eventos, cargando } = useEventos();
+  const { eventos, cargando, error } = useEventos();
 
   // lista de generos disponibles, sacada de los eventos (sin repetidos)
   const generosDisponibles = [...new Set(eventos.map((e) => e.genero))];
@@ -138,6 +138,8 @@ const Home = () => {
 
       {cargando ? (
         <p>Cargando eventos...</p>
+      ) : error ? (
+        <p>{error}</p>
       ) : eventosFiltrados.length === 0 ? (
         <p>
           {fecha

@@ -2,6 +2,7 @@
 export const correosAdmin: string[] = [
   'obedc060@gmail.com',
   'blpeter3014@gmail.com',
+  'gorron267@gmail.com',
 ];
 
 export const esAdmin = (correo: string | null | undefined) =>

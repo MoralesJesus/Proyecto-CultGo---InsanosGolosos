@@ -406,6 +406,7 @@ Por ahora, el proyecto se encuentra en etapa de planeación, por lo que todavía
 1. Crea la base `cultgo` y la tabla con `backend/TablaCultGo!.sql`.
 2. Copia `backend/.env.example` a `backend/.env` y llena `DB_PASSWORD` y `ADMIN_CORREOS` (los mismos correos de `frontend/src/config/admins.ts`).
 3. En `backend/`: `npm install`, `npm run migrar` y `npm start` (puerto 3000).
+4. Opcional: `npm run sembrar` carga 8 eventos de ejemplo en Oaxaca (3 con fecha pasada para probar el filtro de expirados). Se puede correr varias veces sin duplicarlos.
 
 ### Frontend (React + Vite)
 En `frontend/`: `npm install` y `npm run dev` (puerto 5173). Si el backend no está en `http://localhost:3000`, copia `frontend/.env.example` a `frontend/.env` y cambia `VITE_API_URL`.

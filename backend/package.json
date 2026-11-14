@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "migrar": "node scripts/migrar.js",
+    "sembrar": "node scripts/sembrar.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

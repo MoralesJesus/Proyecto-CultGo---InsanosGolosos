@@ -1,23 +1,52 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useEventos } from "../../context/useEventos";
 import Confirmacion from "../../components/admin/Confirmacion";
+import { esExpirado, valorFecha } from "../../utils/formato";
 import type { Evento } from "../../types";
 
+type Filtro = "todos" | "expirados" | "proximos";
+
+const FILTROS: { valor: Filtro; texto: string }[] = [
+  { valor: "todos", texto: "Todos" },
+  { valor: "expirados", texto: "Expirados" },
+  { valor: "proximos", texto: "Próximos" },
+];
+
 export default function AdminEventos() {
-  const { eventos, cargando, borrar, restablecer } = useEventos();
+  const { eventos, cargando, error, borrar } = useEventos();
   const [porBorrar, setPorBorrar] = useState<Evento | null>(null);
-  const [confirmarReset, setConfirmarReset] = useState(false);
+  const [errorBorrar, setErrorBorrar] = useState("");
+
+  // el filtro va en la url (?filtro=expirados) para poder enlazarlo desde el inicio
+  const [parametros, setParametros] = useSearchParams();
+  const filtroUrl = parametros.get("filtro");
+  const filtro: Filtro = FILTROS.some((f) => f.valor === filtroUrl) ? (filtroUrl as Filtro) : "todos";
+
+  const totalExpirados = eventos.filter((e) => esExpirado(e.fecha)).length;
+  const totales: Record<Filtro, number> = {
+    todos: eventos.length,
+    expirados: totalExpirados,
+    proximos: eventos.length - totalExpirados,
+  };
+
+  const visibles = eventos
+    .filter((e) => {
+      if (filtro === "expirados") return esExpirado(e.fecha);
+      if (filtro === "proximos") return !esExpirado(e.fecha);
+      return true;
+    })
+    .sort((a, b) => valorFecha(a.fecha) - valorFecha(b.fecha));
 
   const confirmarBorrado = async () => {
     if (!porBorrar) return;
-    await borrar(porBorrar.id);
+    try {
+      await borrar(porBorrar.id);
+      setErrorBorrar("");
+    } catch (err) {
+      setErrorBorrar(err instanceof Error ? err.message : "No se pudo eliminar el evento.");
+    }
     setPorBorrar(null);
-  };
-
-  const confirmarRestablecer = async () => {
-    await restablecer();
-    setConfirmarReset(false);
   };
 
   return (
@@ -26,23 +55,43 @@ export default function AdminEventos() {
         <div>
           <h1>Eventos</h1>
           <p className="admin-subtitulo">
-            Agrega, edita o elimina los eventos de la página.
+            Agrega, edita o elimina los eventos de la página. Los eventos con fecha
+            pasada se marcan como expirados para que puedas reprogramarlos.
           </p>
         </div>
         <div className="admin-herramientas">
-          <button className="admin-boton-sec" onClick={() => setConfirmarReset(true)}>
-            Restablecer datos de prueba
-          </button>
           <Link to="/admin/eventos/nuevo" className="admin-boton">
             Nuevo evento
           </Link>
         </div>
       </div>
 
+      <div className="admin-filtros" role="tablist">
+        {FILTROS.map((f) => (
+          <button
+            key={f.valor}
+            role="tab"
+            aria-selected={filtro === f.valor}
+            className={filtro === f.valor ? "activo" : ""}
+            onClick={() => setParametros(f.valor === "todos" ? {} : { filtro: f.valor })}
+          >
+            {f.texto} ({totales[f.valor]})
+          </button>
+        ))}
+      </div>
+
+      {errorBorrar && <p className="admin-error">{errorBorrar}</p>}
+
       {cargando ? (
         <p>Cargando eventos...</p>
-      ) : eventos.length === 0 ? (
-        <p>No hay eventos. Crea el primero con el botón Nuevo evento.</p>
+      ) : error ? (
+        <p className="admin-error">{error}</p>
+      ) : visibles.length === 0 ? (
+        <p>
+          {filtro === "expirados"
+            ? "No hay eventos expirados."
+            : "No hay eventos. Crea el primero con el botón Nuevo evento."}
+        </p>
       ) : (
         <div className="admin-tabla-caja">
           <table className="admin-tabla">
@@ -53,39 +102,48 @@ export default function AdminEventos() {
                 <th>Género</th>
                 <th>Fecha</th>
                 <th>Lugar</th>
+                <th>Estado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {eventos.map((evento) => (
-                <tr key={evento.id}>
-                  <td>{evento.nombre}</td>
-                  <td>{evento.artista}</td>
-                  <td>
-                    <span className="admin-etiqueta">{evento.genero}</span>
-                  </td>
-                  <td>
-                    {evento.fecha} · {evento.hora}
-                  </td>
-                  <td>{evento.lugar}</td>
-                  <td>
-                    <div className="admin-acciones">
-                      <Link
-                        to={`/admin/eventos/${evento.id}/editar`}
-                        className="admin-boton-sec"
-                      >
-                        Editar
-                      </Link>
-                      <button
-                        className="admin-boton-peligro"
-                        onClick={() => setPorBorrar(evento)}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {visibles.map((evento) => {
+                const expirado = esExpirado(evento.fecha);
+                const estado = evento.estado ?? "activo";
+                return (
+                  <tr key={evento.id} className={expirado ? "admin-fila-expirada" : undefined}>
+                    <td>{evento.nombre}</td>
+                    <td>{evento.artista}</td>
+                    <td>
+                      <span className="admin-etiqueta">{evento.genero}</span>
+                    </td>
+                    <td>
+                      {evento.fecha} · {evento.hora}
+                      {expirado && <span className="admin-etiqueta admin-etiqueta-expirado">Expirado</span>}
+                    </td>
+                    <td>{evento.lugar}</td>
+                    <td>
+                      <span className={`admin-etiqueta admin-estado-${estado}`}>{estado}</span>
+                    </td>
+                    <td>
+                      <div className="admin-acciones">
+                        <Link
+                          to={`/admin/eventos/${evento.id}/editar`}
+                          className={expirado ? "admin-boton" : "admin-boton-sec"}
+                        >
+                          {expirado ? "Reprogramar" : "Editar"}
+                        </Link>
+                        <button
+                          className="admin-boton-peligro"
+                          onClick={() => setPorBorrar(evento)}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -98,16 +156,6 @@ export default function AdminEventos() {
           textoBoton="Eliminar"
           onConfirmar={confirmarBorrado}
           onCancelar={() => setPorBorrar(null)}
-        />
-      )}
-
-      {confirmarReset && (
-        <Confirmacion
-          titulo="Restablecer datos de prueba"
-          texto="Se van a borrar los cambios y volverán los eventos de prueba originales."
-          textoBoton="Restablecer"
-          onConfirmar={confirmarRestablecer}
-          onCancelar={() => setConfirmarReset(false)}
         />
       )}
     </div>

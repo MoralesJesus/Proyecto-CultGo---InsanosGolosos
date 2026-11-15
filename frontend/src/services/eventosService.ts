@@ -1,44 +1,39 @@
 import type { Evento } from "../types";
-import { eventosPrueba } from "../data/eventosPrueba";
+import { auth } from "./firebase";
 
-// por ahora los eventos se guardan en el navegador
-// cuando este el backend, solo se cambia este archivo por llamadas con axios
-const CLAVE = "cultgo_eventos_v1";
+// los eventos se guardan en PostgreSQL a traves del backend (backend/server.js)
+// la URL se puede cambiar con VITE_API_URL en frontend/.env
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
-const leer = (): Evento[] => {
-  try {
-    const guardado = localStorage.getItem(CLAVE);
-    if (guardado) return JSON.parse(guardado) as Evento[];
-  } catch {
-    // si falla, se usan los de prueba
+// para crear, editar o eliminar se manda el token del usuario de Firebase;
+// el backend revisa que sea uno de los correos de administrador
+const encabezados = async (): Promise<HeadersInit> => {
+  const token = await auth.currentUser?.getIdToken();
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
+
+const pedir = async <T>(ruta: string, opciones: RequestInit = {}): Promise<T> => {
+  const respuesta = await fetch(`${API_URL}${ruta}`, {
+    ...opciones,
+    headers: await encabezados(),
+  });
+  if (!respuesta.ok) {
+    const cuerpo = await respuesta.json().catch(() => null);
+    throw new Error(cuerpo?.error ?? `Error ${respuesta.status} en el servidor`);
   }
-  return eventosPrueba;
+  return (respuesta.status === 204 ? undefined : await respuesta.json()) as T;
 };
 
-const guardar = (eventos: Evento[]) => {
-  localStorage.setItem(CLAVE, JSON.stringify(eventos));
-};
+export const obtenerEventos = (): Promise<Evento[]> => pedir<Evento[]>("/api/eventos");
 
-export const obtenerEventos = async (): Promise<Evento[]> => leer();
+export const crearEvento = (datos: Omit<Evento, "id">): Promise<Evento> =>
+  pedir<Evento>("/api/eventos", { method: "POST", body: JSON.stringify(datos) });
 
-export const crearEvento = async (datos: Omit<Evento, "id">): Promise<Evento> => {
-  const eventos = leer();
-  const nuevoId = eventos.reduce((mayor, e) => Math.max(mayor, e.id), 0) + 1;
-  const nuevo: Evento = { ...datos, id: nuevoId };
-  guardar([...eventos, nuevo]);
-  return nuevo;
-};
+export const actualizarEvento = ({ id, ...datos }: Evento): Promise<Evento> =>
+  pedir<Evento>(`/api/eventos/${id}`, { method: "PUT", body: JSON.stringify(datos) });
 
-export const actualizarEvento = async (evento: Evento): Promise<Evento> => {
-  guardar(leer().map((e) => (e.id === evento.id ? evento : e)));
-  return evento;
-};
-
-export const eliminarEvento = async (id: number): Promise<void> => {
-  guardar(leer().filter((e) => e.id !== id));
-};
-
-export const restablecerEventos = async (): Promise<Evento[]> => {
-  localStorage.removeItem(CLAVE);
-  return eventosPrueba;
-};
+export const eliminarEvento = (id: number): Promise<void> =>
+  pedir<void>(`/api/eventos/${id}`, { method: "DELETE" });

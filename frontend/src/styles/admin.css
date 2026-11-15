@@ -408,6 +408,7 @@
 }
 
 .admin-campo input,
+.admin-campo select,
 .admin-campo textarea {
   width: 100%;
   box-sizing: border-box;
@@ -427,6 +428,7 @@
 }
 
 .admin-campo input:focus,
+.admin-campo select:focus,
 .admin-campo textarea:focus {
   outline: none;
   border-color: #d9bf7e;
@@ -496,4 +498,102 @@
   .admin-formulario {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---------- eventos expirados ---------- */
+
+/* pestanas Todos / Expirados / Proximos */
+.admin-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.admin-contenedor .admin-filtros button {
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #c3c8d2;
+  background-color: #151820;
+  border: 1px solid #2a2f3a;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.admin-contenedor .admin-filtros button.activo {
+  color: #1a1a1a;
+  background-color: #d9bf7e;
+  border-color: #d9bf7e;
+}
+
+/* fila de un evento cuya fecha ya paso: franja roja a la izquierda */
+.admin-tabla tr.admin-fila-expirada td {
+  background-color: rgba(229, 57, 53, 0.08);
+}
+
+.admin-tabla tr.admin-fila-expirada td:first-child {
+  box-shadow: inset 3px 0 0 #e53935;
+}
+
+.admin-etiqueta-expirado {
+  margin-left: 8px;
+  color: #ff8a80;
+  background-color: rgba(229, 57, 53, 0.15);
+  border-color: rgba(229, 57, 53, 0.4);
+}
+
+/* etiquetas de estado */
+.admin-etiqueta[class*="admin-estado-"] {
+  text-transform: capitalize;
+}
+
+.admin-estado-activo {
+  color: #9be29b;
+  background-color: rgba(76, 175, 80, 0.12);
+  border-color: rgba(76, 175, 80, 0.35);
+}
+
+.admin-estado-reprogramado {
+  color: #90caf9;
+  background-color: rgba(30, 136, 229, 0.12);
+  border-color: rgba(30, 136, 229, 0.35);
+}
+
+.admin-estado-cancelado {
+  color: #ffab91;
+  background-color: rgba(255, 112, 67, 0.12);
+  border-color: rgba(255, 112, 67, 0.35);
+}
+
+.admin-estado-finalizado {
+  color: #b0bec5;
+  background-color: rgba(120, 144, 156, 0.12);
+  border-color: rgba(120, 144, 156, 0.35);
+}
+
+/* aviso en el formulario cuando la fecha ya paso */
+.admin-aviso {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #ffcc80;
+  background-color: rgba(255, 179, 0, 0.08);
+  border: 1px solid rgba(255, 179, 0, 0.3);
+  border-radius: 6px;
+}
+
+/* tarjeta de expirados en el inicio del panel (es un enlace) */
+a.admin-tarjeta-expirados {
+  text-decoration: none;
+  color: inherit;
+  border-color: rgba(229, 57, 53, 0.4);
+}
+
+a.admin-tarjeta-expirados strong {
+  color: #ff8a80;
+}
+
+a.admin-tarjeta-expirados:hover {
+  border-color: #e53935;
 }

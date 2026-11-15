@@ -30,3 +30,18 @@ export const a24Horas = (texto: string) => {
   if (sufijo === "AM" && h === 12) h = 0;
   return `${String(h).padStart(2, "0")}:${coincide[2]}`;
 };
+
+// un evento esta expirado si su fecha ("20/10/2026") es anterior al dia de hoy
+export const esExpirado = (dma: string) => {
+  const [dia, mes, anio] = dma.split("/").map(Number);
+  if (!dia || !mes || !anio) return false;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  return new Date(anio, mes - 1, dia).getTime() < hoy.getTime();
+};
+
+// "20/10/2026" -> numero para ordenar por fecha
+export const valorFecha = (dma: string) => {
+  const [dia, mes, anio] = dma.split("/").map(Number);
+  return new Date(anio, mes - 1, dia).getTime() || 0;
+};

@@ -9,9 +9,10 @@ interface FiltroGeneroProps {
 const FiltroGenero: React.FC<FiltroGeneroProps> = ({ generoSeleccionado, generos, onCambio }) => {
   return (
     <select
+      className="filtro-genero"
+      aria-label="Filtrar por género"
       value={generoSeleccionado}
       onChange={(e) => onCambio(e.target.value)}
-            style={{ padding: '8px' }}
     >
       {/* opcion para no filtrar por ningun genero */}
       <option value="">Todos los géneros</option>

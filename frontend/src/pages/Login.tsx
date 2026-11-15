@@ -161,7 +161,7 @@ const Login = () => {
 
         {error && <p className="mensaje-error">{error}</p>}
 
-        <div className="separador-login">O CONTINÚA CON</div>
+        <div className="separador-login">o continúa con</div>
 
         <button className="boton-google" onClick={handleGoogle} disabled={cargandoGoogle}>
           {cargandoGoogle ? (

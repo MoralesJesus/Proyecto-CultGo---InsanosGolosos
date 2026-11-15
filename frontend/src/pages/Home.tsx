@@ -89,71 +89,82 @@ const Home = () => {
     
 
   return (
-      <div className="contenedor-home">
+    <div className="contenedor-home">
       {/* barra del usuario: va dentro de la pagina (no fija) para que no se encime al bajar */}
       <header className="barra-usuario">
-        {user ? (
-          <>
-            <span>Hola, {user.displayName || user.email}</span>
-            <button onClick={cerrarSesion} className="boton-barra">
-              Cerrar sesión
-            </button>
-          </>
-        ) : (
-          <Link to="/login" className="boton-barra">
-            Iniciar sesión
-          </Link>
-        )}
+        <span className="logo-barra">CultGo!</span>
+        <div className="barra-sesion">
+          {user ? (
+            <>
+              <span className="saludo">Hola, {user.displayName || user.email}</span>
+              <button onClick={cerrarSesion} className="boton-barra">
+                Cerrar sesión
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="boton-barra">
+              Iniciar sesión
+            </Link>
+          )}
+        </div>
       </header>
-      <div style={{ textAlign: 'center' }}>
-        <h1 className="titulo-animado">CultGo!</h1>
-      </div>
-        <p className="subtitulo">Encuentra eventos musicales en Oaxaca de Juárez</p>
 
-                        <div style={{ marginBottom: '24px' }}>
+      <section className="portada">
+        <h1 className="titulo-animado">CultGo!</h1>
+        <p className="subtitulo">Encuentra eventos musicales en Oaxaca de Juárez</p>
+      </section>
+
+      {/* buscador y filtros */}
+      <section className="panel-filtros" aria-label="Buscar y filtrar eventos">
         <Buscador valor={busqueda} onCambio={setBusqueda} />
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+
+        <div className="fila-filtros">
           <FiltroGenero generoSeleccionado={genero} generos={generosDisponibles} onCambio={setGenero} />
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px' }}>📅 Fecha:</span>
+
+          <div className="grupo-fecha">
             <FiltroFecha fechaSeleccionada={fecha} onCambio={setFecha} />
             {fecha && (
-              <button onClick={() => setFecha('')} style={{ padding: '4px 10px', cursor: 'pointer' }}>
-                ✕ Limpiar fecha
+              <button onClick={() => setFecha('')} className="boton-limpiar">
+                Limpiar fecha
               </button>
             )}
           </div>
+
+          <button onClick={obtenerUbicacion} disabled={cargandoUbicacion} className="boton-cercania">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" />
+              <circle cx="12" cy="9.5" r="2.5" />
+            </svg>
+            {cargandoUbicacion ? 'Buscando ubicación...' : ubicacion ? 'Ordenado por cercanía' : 'Ordenar por cercanía'}
+          </button>
         </div>
-      </div>
+      </section>
 
-      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                <button onClick={obtenerUbicacion} disabled={cargandoUbicacion} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-          {cargandoUbicacion ? '⏳ Buscando ubicación...' : '📍 Ordenar por cercanía'}
-        </button>
-      </div>
-
-            <p className="contador">
+      <p className="contador">
         {eventosFiltrados.length} {eventosFiltrados.length === 1 ? 'evento encontrado' : 'eventos encontrados'}
       </p>
 
       {cargando ? (
-        <p>Cargando eventos...</p>
+        <p className="mensaje-lista">Cargando eventos...</p>
       ) : error ? (
-        <p>{error}</p>
+        <p className="mensaje-lista">{error}</p>
       ) : eventosFiltrados.length === 0 ? (
-        <p>
+        <p className="mensaje-lista">
           {fecha
             ? `No hay eventos disponibles en la fecha ${fecha}.`
             : 'No hay eventos disponibles con esos filtros.'}
         </p>
       ) : (
-                eventosFiltrados.map((evento) => (
-          <Link key={evento.id} to={`/evento/${evento.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-            <TarjetaEvento evento={evento} />
-          </Link>
-        ))
+        <div className="lista-eventos">
+          {eventosFiltrados.map((evento) => (
+            <Link key={evento.id} to={`/evento/${evento.id}`} className="enlace-tarjeta">
+              <TarjetaEvento evento={evento} />
+            </Link>
+          ))}
+        </div>
       )}
-            <Footer />
+
+      <Footer />
     </div>
   );
 };

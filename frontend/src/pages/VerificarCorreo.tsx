@@ -66,10 +66,10 @@ const VerificarCorreo = () => {
           onClick={handleReenviar}
           disabled={cargando || enviado}
         >
-          {cargando ? "Enviando..." : enviado ? "Correo reenviado ✓" : "Reenviar correo"}
+          {cargando ? "Enviando..." : enviado ? "Correo reenviado" : "Reenviar correo"}
         </button>
 
-        <p className="alternar-modo" style={{ marginTop: "20px" }}>
+        <p className="alternar-modo volver-login">
           <button type="button" onClick={handleVolver}>
             ← Volver al inicio de sesión
           </button>

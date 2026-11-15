@@ -45,3 +45,18 @@ export const valorFecha = (dma: string) => {
   const [dia, mes, anio] = dma.split("/").map(Number);
   return new Date(anio, mes - 1, dia).getTime() || 0;
 };
+
+// "20/10/2026" -> { dia: "20", mes: "oct", semana: "mar" } para el talón del boleto
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+
+export const partesFecha = (dma: string) => {
+  const [dia, mes, anio] = dma.split("/").map(Number);
+  if (!dia || !mes || !anio) return { dia: "--", mes: "", semana: "" };
+  const fecha = new Date(anio, mes - 1, dia);
+  return {
+    dia: String(dia).padStart(2, "0"),
+    mes: MESES[mes - 1],
+    semana: DIAS[fecha.getDay()],
+  };
+};

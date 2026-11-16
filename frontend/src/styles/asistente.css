@@ -146,7 +146,36 @@
   gap: var(--e-2);
 }
 
+/* cada evento: la tarjeta (link al detalle) y a la derecha el boton de ruta */
+.asistente-evento-fila {
+  display: flex;
+  gap: 6px;
+}
+
+.asistente-ruta {
+  flex-shrink: 0;
+  width: 40px;
+  display: grid;
+  place-items: center;
+  color: var(--cempasuchil);
+  background-color: var(--anil-900);
+  border-radius: var(--radio-s);
+  transition: background-color var(--rapido) ease, color var(--rapido) ease;
+}
+
+.asistente-ruta svg {
+  width: 18px;
+  height: 18px;
+}
+
+.asistente-ruta:hover {
+  color: var(--tinta);
+  background-color: var(--cempasuchil);
+}
+
 .asistente-evento {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: stretch;
   overflow: hidden;

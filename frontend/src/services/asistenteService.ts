@@ -11,20 +11,36 @@ export interface Ubicacion {
 // el backend agrega la distancia cuando el usuario compartio su ubicacion
 export type EventoAsistente = Evento & { distanciaKm?: number };
 
+// filtros que el backend uso para responder (se mandan de vuelta para la siguiente pregunta)
+export type FiltrosAsistente = Record<string, unknown>;
+
+// lo que se recuerda de la pregunta anterior, para entender "¿y en enero?" o "¿a que hora es ese?"
+export interface ContextoAsistente {
+  pregunta: string;
+  filtros: FiltrosAsistente;
+  ids: number[];
+}
+
 export interface RespuestaAsistente {
   respuesta: string;
   eventos: EventoAsistente[];
   necesitaUbicacion?: boolean;
+  filtros?: FiltrosAsistente;
 }
 
 export const preguntarAsistente = async (
   mensaje: string,
-  ubicacion?: Ubicacion | null
+  ubicacion?: Ubicacion | null,
+  contexto?: ContextoAsistente | null
 ): Promise<RespuestaAsistente> => {
   const respuesta = await fetch(`${API_URL}/api/asistente`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ mensaje, ...(ubicacion ? { ubicacion } : {}) }),
+    body: JSON.stringify({
+      mensaje,
+      ...(ubicacion ? { ubicacion } : {}),
+      ...(contexto ? { contexto } : {}),
+    }),
   });
   const cuerpo = await respuesta.json().catch(() => null);
   if (!respuesta.ok) {

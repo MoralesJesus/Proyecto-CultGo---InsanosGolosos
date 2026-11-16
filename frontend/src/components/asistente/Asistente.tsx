@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { obtenerUbicacion, preguntarAsistente } from '../../services/asistenteService';
-import type { EventoAsistente, Ubicacion } from '../../services/asistenteService';
+import type {
+  ContextoAsistente,
+  EventoAsistente,
+  FiltrosAsistente,
+  Ubicacion,
+} from '../../services/asistenteService';
 import { partesFecha } from '../../utils/formato';
 import '../../styles/asistente.css';
 
@@ -13,7 +18,29 @@ interface Mensaje {
   error?: boolean;
   // si el asistente pidio la ubicacion, aqui se guarda la pregunta para repetirla
   pideUbicacion?: string;
+  // para recordar la busqueda: que pregunto el usuario y que filtros se usaron
+  pregunta?: string;
+  filtros?: FiltrosAsistente;
 }
+
+// ruta en Google Maps desde donde esta el usuario hasta el evento
+const enlaceRuta = (evento: EventoAsistente) =>
+  Number.isFinite(evento.latitud) && Number.isFinite(evento.longitud)
+    ? `https://www.google.com/maps/dir/?api=1&destination=${evento.latitud},${evento.longitud}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        `${evento.lugar}, ${evento.direccion ?? ''} Oaxaca de Juarez`
+      )}`;
+
+// la ultima respuesta con filtros es el contexto de la siguiente pregunta
+const contextoDe = (mensajes: Mensaje[]): ContextoAsistente | null => {
+  for (let i = mensajes.length - 1; i >= 0; i--) {
+    const m = mensajes[i];
+    if (m.autor === 'asistente' && m.filtros && m.pregunta) {
+      return { pregunta: m.pregunta, filtros: m.filtros, ids: (m.eventos ?? []).map((e) => e.id) };
+    }
+  }
+  return null;
+};
 
 const formatoDistancia = (km: number) => (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`);
 
@@ -21,6 +48,7 @@ const formatoDistancia = (km: number) => (km < 1 ? `${Math.round(km * 1000)} m` 
 const SUGERENCIAS = [
   'Quiero rock este fin de semana',
   '¿Qué hay de jazz en diciembre?',
+  '¿A qué hora es el de sones istmeños?',
   '¿Qué conciertos me quedan cerca?',
 ];
 
@@ -85,10 +113,22 @@ const Asistente = () => {
     if (!repetir) setMensajes((anteriores) => [...anteriores, { autor: 'usuario', texto: limpio }]);
     setPensando(true);
     try {
-      const { respuesta, eventos, necesitaUbicacion } = await preguntarAsistente(limpio, ubicacionUsar);
+      const { respuesta, eventos, necesitaUbicacion, filtros } = await preguntarAsistente(
+        limpio,
+        ubicacionUsar,
+        contextoDe(mensajes)
+      );
       setMensajes((anteriores) => [
         ...anteriores,
-        { autor: 'asistente', texto: respuesta, eventos, pideUbicacion: necesitaUbicacion ? limpio : undefined },
+        {
+          autor: 'asistente',
+          texto: respuesta,
+          eventos,
+          pideUbicacion: necesitaUbicacion ? limpio : undefined,
+          // si pidio la ubicacion, aun no hay resultados que recordar
+          pregunta: necesitaUbicacion ? undefined : limpio,
+          filtros: necesitaUbicacion ? undefined : filtros,
+        },
       ]);
     } catch (error) {
       const texto = error instanceof Error ? error.message : 'El asistente no está disponible.';
@@ -166,7 +206,7 @@ const Asistente = () => {
                     {m.eventos.map((evento) => {
                       const { dia, mes } = partesFecha(evento.fecha);
                       return (
-                        <li key={evento.id}>
+                        <li key={evento.id} className="asistente-evento-fila">
                           <Link to={`/evento/${evento.id}`} className="asistente-evento">
                             <span className="asistente-fecha">
                               <b>{dia}</b>
@@ -184,6 +224,18 @@ const Asistente = () => {
                               )}
                             </span>
                           </Link>
+                          <a
+                            href={enlaceRuta(evento)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="asistente-ruta"
+                            aria-label={`Cómo llegar a ${evento.nombre}`}
+                            title="Cómo llegar"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                              <path d="M3 11l18-8-8 18-2-8-8-2z" />
+                            </svg>
+                          </a>
                         </li>
                       );
                     })}

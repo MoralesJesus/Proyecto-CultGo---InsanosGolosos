@@ -8,6 +8,11 @@
 //   2. Se buscan los eventos en PostgreSQL con esos filtros y la IA redacta
 //      una respuesta corta usando SOLO esos eventos (asi no inventa nada).
 //
+// Ademas:
+//   - recuerda la busqueda anterior ("¿hay jazz en diciembre?" -> "¿y en enero?")
+//   - contesta preguntas sobre un evento ("¿a que hora es el de jazz?", "¿como llego?")
+//   - busca los eventos mas cercanos con la ubicacion del usuario
+//
 // Proveedor de IA: cualquiera que hable el formato de OpenAI (Ollama, Groq,
 // Gemini, OpenRouter...). Se cambia en backend/.env sin tocar codigo:
 //   IA_URL=http://localhost:11434/v1   (Ollama en la misma laptop)
@@ -21,6 +26,7 @@ const IA_TIEMPO_MAX = Number(process.env.IA_TIEMPO_MAX_MS) || 60000;
 
 const MAX_MENSAJE = 300; // caracteres
 const MAX_EVENTOS_RESPUESTA = 6;
+const MAX_EVENTOS_DETALLE = 2;
 
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const PERIODOS = [
@@ -96,6 +102,28 @@ const leerUbicacion = (ubicacion) => {
   return { lat, lon };
 };
 
+// lo que el navegador manda de la busqueda anterior, validado
+const leerContexto = (contexto) => {
+  if (!contexto || typeof contexto !== 'object') return null;
+  const ids = Array.isArray(contexto.ids)
+    ? contexto.ids.map(Number).filter(Number.isInteger).slice(0, MAX_EVENTOS_RESPUESTA)
+    : [];
+  const f = contexto.filtros && typeof contexto.filtros === 'object' ? contexto.filtros : {};
+  const pregunta = typeof contexto.pregunta === 'string' ? contexto.pregunta.slice(0, MAX_MENSAJE) : '';
+  return {
+    pregunta,
+    ids,
+    filtros: {
+      genero: typeof f.genero === 'string' ? f.genero : null,
+      texto: typeof f.texto === 'string' ? f.texto : null,
+      periodo: PERIODOS.includes(f.periodo) ? f.periodo : 'cualquiera',
+      mes: f.mes ?? null,
+      fecha: f.fecha ?? null,
+      cerca: f.cerca === true,
+    },
+  };
+};
+
 // texto corto para mostrar: "350 m" o "2.4 km"
 const formatoDistancia = (km) => (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`);
 
@@ -149,12 +177,19 @@ const leerJSON = (texto) => {
 };
 
 // paso 1: mensaje del usuario -> filtros
-const interpretar = async (mensaje, generos, hoy) => {
+const interpretar = async (mensaje, generos, hoy, contexto) => {
+  const anterior = contexto
+    ? `\nBusqueda anterior del usuario: "${contexto.pregunta}" -> ${JSON.stringify(contexto.filtros)}
+Si el mensaje nuevo es una continuacion (empieza con "y", "mejor", "ahora", o solo cambia una cosa, como "¿y en enero?" o "¿y de rock?"),
+copia los filtros anteriores y cambia SOLO lo que el usuario pide. Si es una busqueda nueva, ignora la anterior.
+Si pregunta por "ese", "el primero" o "ese evento" sin decir cual, usa intencion "detalle" con genero y texto en null.\n`
+    : '';
+
   const instrucciones = `Eres el asistente de CultGo!, una pagina de eventos musicales en Oaxaca de Juárez.
 Tu unico trabajo es convertir el mensaje del usuario en filtros de busqueda. No contestes la pregunta.
 Hoy es ${DIAS[hoy.getDay()]} ${aDma(hoy)}.
 Generos que existen en la base de datos: ${generos.join(', ') || '(ninguno)'}.
-
+${anterior}
 Responde SOLO con un objeto JSON con estas claves:
 - "genero": uno de los generos de la lista tal como esta escrito, o null si no pide un genero o no se parece a ninguno.
 - "texto": una palabra clave para buscar en nombre, artista o lugar (ej. "zocalo", "Xquenda"), o null.
@@ -163,6 +198,8 @@ Responde SOLO con un objeto JSON con estas claves:
    "pasados" = eventos que ya pasaron; "cualquiera" = no dice cuando.
 - "mes": numero del 1 al 12 si periodo es "mes", si no null.
 - "fecha": "DD/MM/YYYY" si periodo es "fecha", si no null.
+- "intencion": "detalle" si pregunta algo de UN evento en particular (hora, lugar, direccion, como llegar, de que trata, cuando es),
+   o "buscar" si quiere ver que eventos hay.
 - "cerca": true si pide eventos cercanos a el ("cerca de mi", "cerca de aqui", "lo mas cercano", "que me queda cerca"), si no false.
 
 Ejemplos:
@@ -170,7 +207,10 @@ Ejemplos:
 "algo de jazz en diciembre" -> {"genero":"Jazz","texto":null,"periodo":"mes","mes":12,"fecha":null,"cerca":false}
 "que hay en el zocalo?" -> {"genero":null,"texto":"zocalo","periodo":"cualquiera","mes":null,"fecha":null,"cerca":false}
 "que conciertos me quedan cerca?" -> {"genero":null,"texto":null,"periodo":"cualquiera","mes":null,"fecha":null,"cerca":true}
-"jazz cerca de mi este mes" -> {"genero":"Jazz","texto":null,"periodo":"este_mes","mes":null,"fecha":null,"cerca":true}`;
+"jazz cerca de mi este mes" -> {"genero":"Jazz","texto":null,"periodo":"este_mes","mes":null,"fecha":null,"cerca":true}
+"a que hora es el de jazz?" -> {"genero":"Jazz","texto":null,"periodo":"cualquiera","mes":null,"fecha":null,"cerca":false,"intencion":"detalle"}
+"como llego al festival guelaguetza?" -> {"genero":null,"texto":"guelaguetza","periodo":"cualquiera","mes":null,"fecha":null,"cerca":false,"intencion":"detalle"}
+En los ejemplos sin "intencion", la intencion es "buscar".`;
 
   const texto = await preguntarIA(
     [
@@ -187,12 +227,55 @@ Ejemplos:
     mes: filtros.mes ?? null,
     fecha: filtros.fecha ?? null,
     cerca: filtros.cerca === true || filtros.cerca === 'true',
+    intencion: filtros.intencion === 'detalle' ? 'detalle' : 'buscar',
+  };
+};
+
+// preguntas tipicas sobre un evento; respaldo por si el modelo no marca "detalle"
+const PALABRAS_DETALLE = /\b(a que hora|que hora|como llego|como llegar|donde es|donde queda|en donde|direccion|de que trata|cuando es|que dia es)\b/;
+const preguntaDetalle = (mensaje) => PALABRAS_DETALLE.test(normalizar(mensaje));
+
+// "¿como llego?", "¿donde es?": se contesta con el lugar y la direccion, sin pasar por la IA
+const PALABRAS_RUTA = /\b(como llego|como llegar|como le hago para llegar|direccion|donde queda|donde es|en donde es)\b/;
+const preguntaRuta = (mensaje) => PALABRAS_RUTA.test(normalizar(mensaje));
+
+// palabras "importantes" de un texto (sin acentos, sin palabras cortas como "el", "de", "los")
+const VACIAS = new Set(['para', 'como', 'donde', 'cuando', 'hora', 'que', 'evento', 'concierto', 'este', 'esta', 'llego', 'llegar']);
+const palabrasDe = (texto) =>
+  normalizar(texto)
+    .split(/[^a-z0-9ñ]+/)
+    .filter((p) => p.length >= 4 && !VACIAS.has(p));
+
+// si varios eventos coinciden, se queda con los que mas se parecen a lo que escribio el usuario
+// ("sones istmeños" -> "Noche de Sones Istmeños" gana a "Sones para los Fieles Difuntos")
+const losQueMasCoinciden = (mensaje, eventos) => {
+  if (eventos.length < 2) return eventos;
+  const buscadas = new Set(palabrasDe(mensaje));
+  const puntos = eventos.map((e) => palabrasDe(`${e.nombre} ${e.artista}`).filter((p) => buscadas.has(p)).length);
+  const mejor = Math.max(...puntos);
+  return mejor > 0 ? eventos.filter((_, i) => puntos[i] === mejor) : eventos;
+};
+
+// "¿y en enero?", "¿y de rock?", "mejor el sabado": es continuacion de la busqueda anterior.
+// Si el modelo olvido algun filtro, se completa con el de antes (respaldo para modelos chicos)
+const CONTINUACION = /^(y|e|mejor|ahora|tambien|y si)\b/;
+const completarConAnterior = (mensaje, filtros, contexto) => {
+  if (!contexto || !CONTINUACION.test(normalizar(mensaje).replace(/^[¿?¡!\s]+/, ''))) return filtros;
+  const anterior = contexto.filtros;
+  return {
+    ...filtros,
+    genero: filtros.genero ?? anterior.genero,
+    texto: filtros.texto ?? anterior.texto,
+    periodo: filtros.periodo === 'cualquiera' ? anterior.periodo : filtros.periodo,
+    mes: filtros.periodo === 'cualquiera' ? anterior.mes : filtros.mes,
+    fecha: filtros.periodo === 'cualquiera' ? anterior.fecha : filtros.fecha,
+    cerca: filtros.cerca || anterior.cerca,
   };
 };
 
 // busca en la lista de eventos con los filtros (todo en JS: son pocos eventos)
-const filtrarEventos = (eventos, filtros, hoy) => {
-  const [desde, hasta] = rangoDeFechas(filtros, hoy);
+const filtrarEventos = (eventos, filtros, hoy, { todasLasFechas = false } = {}) => {
+  const [desde, hasta] = todasLasFechas ? [null, null] : rangoDeFechas(filtros, hoy);
   const genero = normalizar(filtros.genero);
   const texto = normalizar(filtros.texto);
 
@@ -217,13 +300,13 @@ const filtrarEventos = (eventos, filtros, hoy) => {
 };
 
 // paso 2: redactar la respuesta usando solo los eventos encontrados
-const redactar = async (mensaje, eventos, hoy, porCercania) => {
+const redactar = async (mensaje, eventos, hoy, { porCercania = false, detalle = false, anterior = '' } = {}) => {
   const lista = eventos
     .map((e) =>
       `- ${e.nombre} | ${e.artista} | ${e.genero} | ${DIAS[deDma(e.fecha).getDay()]} ${e.fecha} ${e.hora} | ` +
       `${e.lugar}, ${e.direccion}` +
       (e.distanciaKm !== undefined ? ` | a ${formatoDistancia(e.distanciaKm)} del usuario` : '') +
-      ` | estado: ${e.estado ?? 'activo'} | ${e.descripcion}`
+      ` | estado: ${deDma(e.fecha) < hoy ? 'ya paso' : e.estado ?? 'activo'} | ${e.descripcion}`
     )
     .join('\n');
 
@@ -238,7 +321,14 @@ Reglas:
 - Si preguntan algo que no esta en los datos (como el precio), di que no tienes esa informacion.
 - Las tarjetas de los eventos se muestran debajo de tu respuesta, asi que no repitas todos los datos.${
     porCercania ? '\n- La lista esta ordenada del mas cercano al mas lejano; menciona el mas cercano y a que distancia esta.' : ''
-  }`;
+  }${
+    detalle
+      ? '\n- El usuario pregunta por un evento en concreto: responde directo lo que pregunta (hora, fecha, lugar, direccion o de que trata).' +
+        '\n- Si pregunta como llegar, dale el lugar y la direccion y dile que toque el boton de la flechita en la tarjeta para abrir la ruta en el mapa.' +
+        '\n- No ofrezcas cosas que no puedes hacer (no puedes dar indicaciones paso a paso ni pedir la ubicacion).' +
+        '\n- Si el evento ya paso, dilo.'
+      : ''
+  }${anterior ? `\nContexto: antes el usuario pregunto "${anterior}".` : ''}`;
 
   return (await preguntarIA(
     [
@@ -289,11 +379,13 @@ module.exports = (app, pool, aEvento) => {
     const generos = [...new Set(eventos.map((e) => e.genero).filter(Boolean))];
 
     const ubicacion = leerUbicacion(req.body?.ubicacion);
+    const contexto = leerContexto(req.body?.contexto);
 
     let filtros;
     try {
-      filtros = await interpretar(mensaje, generos, hoy);
+      filtros = completarConAnterior(mensaje, await interpretar(mensaje, generos, hoy, contexto), contexto);
       if (pideCercania(mensaje)) filtros.cerca = true;
+      if (preguntaDetalle(mensaje) && !filtros.cerca) filtros.intencion = 'detalle';
     } catch (error) {
       console.error('Asistente: la IA no respondio:', error.message);
       return res.status(503).json({
@@ -311,7 +403,24 @@ module.exports = (app, pool, aEvento) => {
       });
     }
 
-    let encontrados = filtrarEventos(eventos, filtros, hoy);
+    const detalle = filtros.intencion === 'detalle';
+    let encontrados;
+    if (detalle) {
+      // pregunta por un evento: se busca en todas las fechas (puede ser uno que ya paso)
+      const conPeriodo = filtros.periodo !== 'cualquiera';
+      encontrados = filtros.genero || filtros.texto
+        ? filtrarEventos(eventos, filtros, hoy, { todasLasFechas: !conPeriodo })
+        : [];
+      // "¿a que hora es ese?": se usan los eventos de la respuesta anterior
+      if (!encontrados.length && contexto?.ids.length) {
+        encontrados = contexto.ids.map((id) => eventos.find((e) => e.id === id)).filter(Boolean);
+      }
+      encontrados = losQueMasCoinciden(mensaje, encontrados);
+      // primero los que no han pasado
+      encontrados.sort((a, b) => (deDma(a.fecha) < hoy) - (deDma(b.fecha) < hoy));
+    } else {
+      encontrados = filtrarEventos(eventos, filtros, hoy);
+    }
 
     // con ubicacion: se calcula la distancia a cada evento y, si pidio "cerca", se ordena por cercania
     const porCercania = Boolean(filtros.cerca && ubicacion);
@@ -327,10 +436,10 @@ module.exports = (app, pool, aEvento) => {
           .sort((a, b) => a.distanciaKm - b.distanciaKm);
       }
     }
-    const mostrar = encontrados.slice(0, MAX_EVENTOS_RESPUESTA);
+    const mostrar = encontrados.slice(0, detalle && !porCercania ? MAX_EVENTOS_DETALLE : MAX_EVENTOS_RESPUESTA);
 
     // por cercania la respuesta la arma el backend: el modelo a veces confunde cual esta mas cerca
-    if (porCercania && mostrar.length) {
+    if (porCercania && !detalle && mostrar.length) {
       const [primero] = mostrar;
       const respuesta =
         `El más cercano es "${primero.nombre}" en ${primero.lugar}, a ${formatoDistancia(primero.distanciaKm)} de ti` +
@@ -339,13 +448,29 @@ module.exports = (app, pool, aEvento) => {
       return res.json({ respuesta, eventos: mostrar, filtros });
     }
 
+    // "¿como llego?": respuesta fija con el lugar y la direccion del evento (el modelo inventaba cosas)
+    if (detalle && !porCercania && preguntaRuta(mensaje) && mostrar.length) {
+      const [evento] = mostrar;
+      const direccion = evento.direccion ? ` (${evento.direccion})` : '';
+      const respuesta =
+        `"${evento.nombre}" es en ${evento.lugar}${direccion}. ` +
+        'Toca la flechita junto a la tarjeta y se abre la ruta en Google Maps desde donde estás.';
+      return res.json({ respuesta, eventos: [evento], filtros });
+    }
+
     let respuesta;
     try {
-      respuesta = await redactar(mensaje, mostrar, hoy, porCercania);
+      respuesta = await redactar(mensaje, mostrar, hoy, {
+        porCercania,
+        detalle,
+        anterior: contexto?.pregunta ?? '',
+      });
     } catch (error) {
       // si falla el segundo paso, igual se muestran los eventos encontrados
       console.error('Asistente: error redactando la respuesta:', error.message);
-      respuesta = mostrar.length
+      respuesta = detalle && mostrar.length
+        ? `"${mostrar[0].nombre}" es el ${DIAS[deDma(mostrar[0].fecha).getDay()]} ${mostrar[0].fecha} a las ${mostrar[0].hora}, en ${mostrar[0].lugar}.`
+        : mostrar.length
         ? `Encontré ${encontrados.length} ${encontrados.length === 1 ? 'evento' : 'eventos'}:`
         : 'No encontré eventos con esa búsqueda. Prueba con otro género o fecha.';
     }
@@ -359,3 +484,7 @@ module.exports.rangoDeFechas = rangoDeFechas;
 module.exports.filtrarEventos = filtrarEventos;
 module.exports.distanciaKm = distanciaKm;
 module.exports.pideCercania = pideCercania;
+module.exports.preguntaDetalle = preguntaDetalle;
+module.exports.completarConAnterior = completarConAnterior;
+module.exports.losQueMasCoinciden = losQueMasCoinciden;
+module.exports.preguntaRuta = preguntaRuta;

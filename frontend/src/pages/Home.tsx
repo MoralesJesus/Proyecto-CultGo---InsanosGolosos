@@ -8,6 +8,7 @@ import { useEventos } from '../context/useEventos';
 import { calcularDistancia } from '../utils/distancia';
 import { useAuth } from '../context/AuthContext';
 import { cerrarSesion } from '../services/firebase';
+import { esAdmin } from '../config/admins';
 import Footer from '../components/layout/Footer';
 
 
@@ -97,6 +98,12 @@ const Home = () => {
           {user ? (
             <>
               <span className="saludo">Hola, {user.displayName || user.email}</span>
+              {/* solo los correos de config/admins.ts ven este boton */}
+              {esAdmin(user.email) && (
+                <Link to="/admin" className="boton-barra boton-admin">
+                  Panel de admin
+                </Link>
+              )}
               <button onClick={cerrarSesion} className="boton-barra">
                 Cerrar sesión
               </button>

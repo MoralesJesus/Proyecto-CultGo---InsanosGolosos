@@ -68,6 +68,17 @@
   color: var(--cempasuchil);
 }
 
+/* boton al panel de admin: mismo estilo, pero resaltado en cempasuchil */
+.boton-admin {
+  color: var(--cempasuchil);
+  border-color: var(--cempasuchil);
+}
+
+.boton-admin:hover {
+  color: var(--anil-900);
+  background: var(--cempasuchil);
+}
+
 /* portada con el nombre grande, alineada a la izquierda como cartel */
 .portada {
   padding: var(--e-8) 0 var(--e-6);

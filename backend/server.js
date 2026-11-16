@@ -186,5 +186,8 @@ for (const ruta of ['/api/eventos/:id', '/api/events/:id']) {
   app.delete(ruta, requiereAdmin, eliminarEvento);
 }
 
+// ---------- Asistente con IA (ver asistente.js) ----------
+require('./asistente')(app, pool, aEvento);
+
 const PUERTO = process.env.PORT || 3000;
 app.listen(PUERTO, () => console.log(`Servidor corriendo en el puerto ${PUERTO}`));

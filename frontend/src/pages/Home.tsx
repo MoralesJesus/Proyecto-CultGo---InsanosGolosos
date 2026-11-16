@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { cerrarSesion } from '../services/firebase';
 import { esAdmin } from '../config/admins';
 import Footer from '../components/layout/Footer';
+import Asistente from '../components/asistente/Asistente';
 
 
 
@@ -172,6 +173,9 @@ const Home = () => {
       )}
 
       <Footer />
+
+      {/* chat con IA (funcion extra: si la IA no responde, lo demas sigue igual) */}
+      <Asistente />
     </div>
   );
 };

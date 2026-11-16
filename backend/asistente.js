@@ -76,11 +76,38 @@ const rangoDeFechas = ({ periodo, fecha, mes }, hoy) => {
   }
 };
 
+// ---------- distancia ----------
+
+// distancia en km entre dos puntos (formula de Haversine, la misma de utils/distancia.ts)
+const distanciaKm = (lat1, lon1, lat2, lon2) => {
+  const rad = (g) => (g * Math.PI) / 180;
+  const dLat = rad(lat2 - lat1);
+  const dLon = rad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+// la ubicacion llega del navegador; se valida que sean numeros con sentido
+const leerUbicacion = (ubicacion) => {
+  const lat = Number(ubicacion?.lat);
+  const lon = Number(ubicacion?.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+  return { lat, lon };
+};
+
+// texto corto para mostrar: "350 m" o "2.4 km"
+const formatoDistancia = (km) => (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`);
+
+// los modelos chicos a veces no marcan "cerca", asi que tambien se detecta con palabras clave
+const PALABRAS_CERCA = /\b(cerca|cercan[oa]s?|cercania|alrededor|por aqui|a mi lado|mi ubicacion|donde estoy)\b/;
+const pideCercania = (mensaje) => PALABRAS_CERCA.test(normalizar(mensaje));
+
 // ---------- texto ----------
 
 // minusculas y sin acentos, para comparar "Electrónica" con "electronica"
 const normalizar = (texto) =>
-  String(texto ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  String(texto ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
 // ---------- llamada a la IA ----------
 
@@ -136,11 +163,14 @@ Responde SOLO con un objeto JSON con estas claves:
    "pasados" = eventos que ya pasaron; "cualquiera" = no dice cuando.
 - "mes": numero del 1 al 12 si periodo es "mes", si no null.
 - "fecha": "DD/MM/YYYY" si periodo es "fecha", si no null.
+- "cerca": true si pide eventos cercanos a el ("cerca de mi", "cerca de aqui", "lo mas cercano", "que me queda cerca"), si no false.
 
 Ejemplos:
-"quiero rock este fin de semana" -> {"genero":"Rock","texto":null,"periodo":"fin_de_semana","mes":null,"fecha":null}
-"algo de jazz en diciembre" -> {"genero":"Jazz","texto":null,"periodo":"mes","mes":12,"fecha":null}
-"que hay en el zocalo?" -> {"genero":null,"texto":"zocalo","periodo":"cualquiera","mes":null,"fecha":null}`;
+"quiero rock este fin de semana" -> {"genero":"Rock","texto":null,"periodo":"fin_de_semana","mes":null,"fecha":null,"cerca":false}
+"algo de jazz en diciembre" -> {"genero":"Jazz","texto":null,"periodo":"mes","mes":12,"fecha":null,"cerca":false}
+"que hay en el zocalo?" -> {"genero":null,"texto":"zocalo","periodo":"cualquiera","mes":null,"fecha":null,"cerca":false}
+"que conciertos me quedan cerca?" -> {"genero":null,"texto":null,"periodo":"cualquiera","mes":null,"fecha":null,"cerca":true}
+"jazz cerca de mi este mes" -> {"genero":"Jazz","texto":null,"periodo":"este_mes","mes":null,"fecha":null,"cerca":true}`;
 
   const texto = await preguntarIA(
     [
@@ -156,6 +186,7 @@ Ejemplos:
     periodo: PERIODOS.includes(filtros.periodo) ? filtros.periodo : 'cualquiera',
     mes: filtros.mes ?? null,
     fecha: filtros.fecha ?? null,
+    cerca: filtros.cerca === true || filtros.cerca === 'true',
   };
 };
 
@@ -186,11 +217,13 @@ const filtrarEventos = (eventos, filtros, hoy) => {
 };
 
 // paso 2: redactar la respuesta usando solo los eventos encontrados
-const redactar = async (mensaje, eventos, hoy) => {
+const redactar = async (mensaje, eventos, hoy, porCercania) => {
   const lista = eventos
     .map((e) =>
       `- ${e.nombre} | ${e.artista} | ${e.genero} | ${DIAS[deDma(e.fecha).getDay()]} ${e.fecha} ${e.hora} | ` +
-      `${e.lugar}, ${e.direccion} | estado: ${e.estado ?? 'activo'} | ${e.descripcion}`
+      `${e.lugar}, ${e.direccion}` +
+      (e.distanciaKm !== undefined ? ` | a ${formatoDistancia(e.distanciaKm)} del usuario` : '') +
+      ` | estado: ${e.estado ?? 'activo'} | ${e.descripcion}`
     )
     .join('\n');
 
@@ -203,7 +236,9 @@ Reglas:
 - No inventes eventos, precios, horarios ni datos que no esten en la lista.
 - Si la lista esta vacia, dilo y sugiere probar con otro genero o fecha.
 - Si preguntan algo que no esta en los datos (como el precio), di que no tienes esa informacion.
-- Las tarjetas de los eventos se muestran debajo de tu respuesta, asi que no repitas todos los datos.`;
+- Las tarjetas de los eventos se muestran debajo de tu respuesta, asi que no repitas todos los datos.${
+    porCercania ? '\n- La lista esta ordenada del mas cercano al mas lejano; menciona el mas cercano y a que distancia esta.' : ''
+  }`;
 
   return (await preguntarIA(
     [
@@ -253,9 +288,12 @@ module.exports = (app, pool, aEvento) => {
     const hoy = inicioDelDia(new Date());
     const generos = [...new Set(eventos.map((e) => e.genero).filter(Boolean))];
 
+    const ubicacion = leerUbicacion(req.body?.ubicacion);
+
     let filtros;
     try {
       filtros = await interpretar(mensaje, generos, hoy);
+      if (pideCercania(mensaje)) filtros.cerca = true;
     } catch (error) {
       console.error('Asistente: la IA no respondio:', error.message);
       return res.status(503).json({
@@ -263,12 +301,47 @@ module.exports = (app, pool, aEvento) => {
       });
     }
 
-    const encontrados = filtrarEventos(eventos, filtros, hoy);
+    // pidio "cerca de mi" pero el navegador no mando la ubicacion: se le pide al usuario
+    if (filtros.cerca && !ubicacion) {
+      return res.json({
+        respuesta: 'Para decirte qué eventos te quedan cerca necesito tu ubicación. Toca el botón para compartirla.',
+        eventos: [],
+        necesitaUbicacion: true,
+        filtros,
+      });
+    }
+
+    let encontrados = filtrarEventos(eventos, filtros, hoy);
+
+    // con ubicacion: se calcula la distancia a cada evento y, si pidio "cerca", se ordena por cercania
+    const porCercania = Boolean(filtros.cerca && ubicacion);
+    if (ubicacion) {
+      encontrados = encontrados.map((e) =>
+        Number.isFinite(e.latitud) && Number.isFinite(e.longitud)
+          ? { ...e, distanciaKm: Math.round(distanciaKm(ubicacion.lat, ubicacion.lon, e.latitud, e.longitud) * 10) / 10 }
+          : e
+      );
+      if (porCercania) {
+        encontrados = encontrados
+          .filter((e) => e.distanciaKm !== undefined)
+          .sort((a, b) => a.distanciaKm - b.distanciaKm);
+      }
+    }
     const mostrar = encontrados.slice(0, MAX_EVENTOS_RESPUESTA);
+
+    // por cercania la respuesta la arma el backend: el modelo a veces confunde cual esta mas cerca
+    if (porCercania && mostrar.length) {
+      const [primero] = mostrar;
+      const respuesta =
+        `El más cercano es "${primero.nombre}" en ${primero.lugar}, a ${formatoDistancia(primero.distanciaKm)} de ti` +
+        ` (${DIAS[deDma(primero.fecha).getDay()]} ${primero.fecha}, ${primero.hora}).` +
+        (mostrar.length > 1 ? ' Aquí tienes los demás, del más cercano al más lejano:' : '');
+      return res.json({ respuesta, eventos: mostrar, filtros });
+    }
 
     let respuesta;
     try {
-      respuesta = await redactar(mensaje, mostrar, hoy);
+      respuesta = await redactar(mensaje, mostrar, hoy, porCercania);
     } catch (error) {
       // si falla el segundo paso, igual se muestran los eventos encontrados
       console.error('Asistente: error redactando la respuesta:', error.message);
@@ -284,3 +357,5 @@ module.exports = (app, pool, aEvento) => {
 // se exportan para poder probarlas sin IA
 module.exports.rangoDeFechas = rangoDeFechas;
 module.exports.filtrarEventos = filtrarEventos;
+module.exports.distanciaKm = distanciaKm;
+module.exports.pideCercania = pideCercania;

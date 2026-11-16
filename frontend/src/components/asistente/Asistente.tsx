@@ -1,23 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import type { Evento } from '../../types';
-import { preguntarAsistente } from '../../services/asistenteService';
+import { obtenerUbicacion, preguntarAsistente } from '../../services/asistenteService';
+import type { EventoAsistente, Ubicacion } from '../../services/asistenteService';
 import { partesFecha } from '../../utils/formato';
 import '../../styles/asistente.css';
 
 interface Mensaje {
   autor: 'usuario' | 'asistente';
   texto: string;
-  eventos?: Evento[];
+  eventos?: EventoAsistente[];
   error?: boolean;
+  // si el asistente pidio la ubicacion, aqui se guarda la pregunta para repetirla
+  pideUbicacion?: string;
 }
+
+const formatoDistancia = (km: number) => (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`);
 
 // ideas para que el usuario sepa que puede preguntar
 const SUGERENCIAS = [
   'Quiero rock este fin de semana',
   '¿Qué hay de jazz en diciembre?',
-  '¿Qué eventos hay en el centro?',
+  '¿Qué conciertos me quedan cerca?',
 ];
 
 const SALUDO: Mensaje = {
@@ -54,6 +58,9 @@ const Asistente = () => {
   const [mensajes, setMensajes] = useState<Mensaje[]>(() => leerGuardado(CLAVE_CHAT, [SALUDO]));
   const [texto, setTexto] = useState('');
   const [pensando, setPensando] = useState(false);
+  // la ubicacion solo se guarda en memoria (no en sessionStorage) por privacidad
+  const [ubicacion, setUbicacion] = useState<Ubicacion | null>(null);
+  const [buscandoUbicacion, setBuscandoUbicacion] = useState(false);
   const finRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => guardar(CLAVE_CHAT, mensajes), [mensajes]);
@@ -70,20 +77,42 @@ const Asistente = () => {
     finRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes, pensando]);
 
-  const enviar = async (mensaje: string) => {
+  // manda la pregunta al backend; "repetir" = no volver a pintar la burbuja del usuario
+  const enviar = async (mensaje: string, ubicacionUsar: Ubicacion | null = ubicacion, repetir = false) => {
     const limpio = mensaje.trim();
     if (!limpio || pensando) return;
     setTexto('');
-    setMensajes((anteriores) => [...anteriores, { autor: 'usuario', texto: limpio }]);
+    if (!repetir) setMensajes((anteriores) => [...anteriores, { autor: 'usuario', texto: limpio }]);
     setPensando(true);
     try {
-      const { respuesta, eventos } = await preguntarAsistente(limpio);
-      setMensajes((anteriores) => [...anteriores, { autor: 'asistente', texto: respuesta, eventos }]);
+      const { respuesta, eventos, necesitaUbicacion } = await preguntarAsistente(limpio, ubicacionUsar);
+      setMensajes((anteriores) => [
+        ...anteriores,
+        { autor: 'asistente', texto: respuesta, eventos, pideUbicacion: necesitaUbicacion ? limpio : undefined },
+      ]);
     } catch (error) {
       const texto = error instanceof Error ? error.message : 'El asistente no está disponible.';
       setMensajes((anteriores) => [...anteriores, { autor: 'asistente', texto, error: true }]);
     } finally {
       setPensando(false);
+    }
+  };
+
+  // el usuario toco "Compartir mi ubicación": se pide permiso y se repite su pregunta
+  const compartirUbicacion = async (pregunta: string) => {
+    if (buscandoUbicacion || pensando) return;
+    setBuscandoUbicacion(true);
+    try {
+      const nueva = await obtenerUbicacion();
+      setUbicacion(nueva);
+      // el boton ya no hace falta en ese mensaje
+      setMensajes((anteriores) => anteriores.map((m) => (m.pideUbicacion ? { ...m, pideUbicacion: undefined } : m)));
+      setBuscandoUbicacion(false);
+      await enviar(pregunta, nueva, true);
+    } catch (error) {
+      setBuscandoUbicacion(false);
+      const texto = error instanceof Error ? error.message : 'No pude obtener tu ubicación.';
+      setMensajes((anteriores) => [...anteriores, { autor: 'asistente', texto, error: true }]);
     }
   };
 
@@ -123,6 +152,15 @@ const Asistente = () => {
             {mensajes.map((m, i) => (
               <div key={i} className={`asistente-burbuja ${m.autor}${m.error ? ' con-error' : ''}`}>
                 <p>{m.texto}</p>
+                {m.pideUbicacion && (
+                  <button
+                    className="asistente-ubicacion"
+                    onClick={() => compartirUbicacion(m.pideUbicacion!)}
+                    disabled={buscandoUbicacion || pensando}
+                  >
+                    📍 {buscandoUbicacion ? 'Buscando tu ubicación...' : 'Compartir mi ubicación'}
+                  </button>
+                )}
                 {m.eventos && m.eventos.length > 0 && (
                   <ul className="asistente-eventos">
                     {m.eventos.map((evento) => {
@@ -139,6 +177,11 @@ const Asistente = () => {
                               <small>
                                 {evento.hora} · {evento.lugar}
                               </small>
+                              {evento.distanciaKm !== undefined && (
+                                <small className="asistente-distancia">
+                                  📍 a {formatoDistancia(evento.distanciaKm)}
+                                </small>
+                              )}
                             </span>
                           </Link>
                         </li>
@@ -153,7 +196,7 @@ const Asistente = () => {
             {mensajes.length === 1 && (
               <div className="asistente-sugerencias">
                 {SUGERENCIAS.map((s) => (
-                  <button key={s} onClick={() => enviar(s)}>
+                  <button key={s} onClick={() => enviar(s)} disabled={pensando}>
                     {s}
                   </button>
                 ))}

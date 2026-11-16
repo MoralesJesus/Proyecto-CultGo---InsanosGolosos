@@ -225,6 +225,29 @@
   background-color: rgba(242, 169, 59, 0.12);
 }
 
+/* boton para compartir la ubicacion cuando se pregunta por eventos cercanos */
+.asistente-ubicacion {
+  margin-top: var(--e-3);
+  min-height: 40px;
+  padding: 0 var(--e-4);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tinta);
+  background-color: var(--cempasuchil);
+  border: none;
+  border-radius: 999px;
+}
+
+.asistente-ubicacion:hover:not(:disabled) {
+  background-color: var(--cempasuchil-claro);
+}
+
+/* distancia del evento al usuario */
+.asistente-evento-info small.asistente-distancia {
+  font-weight: 700;
+  color: var(--cempasuchil);
+}
+
 /* tres puntitos mientras la IA piensa */
 .asistente-burbuja.pensando {
   display: flex;

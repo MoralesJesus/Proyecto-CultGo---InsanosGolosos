@@ -27,6 +27,7 @@ const eventos = [
     dias: -28, nombre: 'Rock en la Plaza de la Danza', artista: 'Los Alebrijes Eléctricos', genero: 'Rock',
     hora: '8:00 PM', lugar: 'Plaza de la Danza', direccion: 'Av. Independencia s/n, junto a la Basílica de la Soledad, Centro, Oaxaca de Juárez',
     latitud: 17.0618, longitud: -96.73, descripcion: 'Bandas oaxaqueñas de rock alternativo en un escenario al aire libre.',
+    imagen: '/eventos/rock.jpg',
   },
   {
     dias: -12, nombre: 'Sones para los Fieles Difuntos', artista: 'Ensamble Xquenda', genero: 'Son istmeño',
@@ -48,6 +49,7 @@ const eventos = [
     dias: 20, nombre: 'Jazz entre Muros de Cantera', artista: 'Cuarteto Mezcal Azul', genero: 'Jazz',
     hora: '8:00 PM', lugar: 'Centro Cultural San Pablo', direccion: 'M. Hidalgo 907, Centro, Oaxaca de Juárez',
     latitud: 17.0604, longitud: -96.7243, descripcion: 'Jazz contemporáneo con fusiones de música oaxaqueña en el patio del ex convento.',
+    imagen: '/eventos/jazz.jpg',
   },
   {
     dias: 22, nombre: 'Canciones del Valle', artista: 'Lila Guendaliza', genero: 'Trova',
@@ -58,23 +60,35 @@ const eventos = [
     dias: 29, nombre: 'Calenda Electrónica', artista: 'Colectivo Tlayuda Beat', genero: 'Electrónica',
     hora: '9:00 PM', lugar: 'Jardín El Llano (Paseo Juárez)', direccion: 'Paseo Juárez s/n, Centro, Oaxaca de Juárez',
     latitud: 17.0682, longitud: -96.7206, descripcion: 'Sesión electrónica con samples de chilenas y música de calenda.',
+    imagen: '/eventos/electronica.jpg',
   },
 ];
 
 (async () => {
   let insertados = 0;
+  let conFoto = 0;
   try {
     for (const { dias, ...evento } of eventos) {
       const { rowCount } = await pool.query(
-        `INSERT INTO eventos_cultgo (nombre, artista, genero, fecha, hora, lugar, direccion, latitud, longitud, descripcion)
-         SELECT $1::varchar, $2, $3, $4, $5, $6, $7, $8, $9, $10
+        `INSERT INTO eventos_cultgo (nombre, artista, genero, fecha, hora, lugar, direccion, latitud, longitud, descripcion, imagen)
+         SELECT $1::varchar, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
          WHERE NOT EXISTS (SELECT 1 FROM eventos_cultgo WHERE nombre = $1::varchar);`,
         [evento.nombre, evento.artista, evento.genero, enDias(dias), evento.hora, evento.lugar,
-          evento.direccion, evento.latitud, evento.longitud, evento.descripcion]
+          evento.direccion, evento.latitud, evento.longitud, evento.descripcion, evento.imagen ?? null]
       );
       insertados += rowCount;
+
+      // si el evento ya existia sin foto (se sembro con la version anterior), se le pone
+      if (evento.imagen) {
+        const actualizado = await pool.query(
+          `UPDATE eventos_cultgo SET imagen = $2 WHERE nombre = $1::varchar AND (imagen IS NULL OR imagen = '');`,
+          [evento.nombre, evento.imagen]
+        );
+        conFoto += actualizado.rowCount;
+      }
     }
     console.log(`Eventos de ejemplo insertados: ${insertados} (ya existian: ${eventos.length - insertados})`);
+    if (conFoto) console.log(`Eventos existentes a los que se les agrego foto: ${conFoto}`);
   } catch (error) {
     console.error('Error cargando eventos de ejemplo:', error.message);
     process.exitCode = 1;

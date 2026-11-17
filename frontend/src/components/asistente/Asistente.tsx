@@ -21,7 +21,26 @@ interface Mensaje {
   // para recordar la busqueda: que pregunto el usuario y que filtros se usaron
   pregunta?: string;
   filtros?: FiltrosAsistente;
+  sugerencias?: string[];
+  total?: number;
+  idsTodos?: number[];
 }
+
+interface Props {
+  // muestra en la lista de la pagina todos los eventos que encontro el asistente
+  onVerEnPagina?: (ids: number[], pregunta: string) => void;
+}
+
+// etiqueta para eventos que ya pasaron, se cancelaron o cambiaron de fecha
+const etiquetaEstado = (evento: EventoAsistente): string | null => {
+  if (evento.estado === 'cancelado') return 'Cancelado';
+  if (evento.estado === 'reprogramado') return 'Reprogramado';
+  const [dia, mes, anio] = evento.fecha.split('/').map(Number);
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  if (evento.estado === 'finalizado' || new Date(anio, mes - 1, dia) < hoy) return 'Ya pasó';
+  return null;
+};
 
 // ruta en Google Maps desde donde esta el usuario hasta el evento
 const enlaceRuta = (evento: EventoAsistente) =>
@@ -31,15 +50,20 @@ const enlaceRuta = (evento: EventoAsistente) =>
         `${evento.lugar}, ${evento.direccion ?? ''} Oaxaca de Juarez`
       )}`;
 
-// la ultima respuesta con filtros es el contexto de la siguiente pregunta
+// contexto de la siguiente pregunta:
+// - filtros: los de la ultima respuesta (para "¿y en enero?")
+// - ids: los de la ultima respuesta QUE MOSTRO eventos (para "¿como llego al segundo?"),
+//   aunque despues haya habido una respuesta sin tarjetas
 const contextoDe = (mensajes: Mensaje[]): ContextoAsistente | null => {
-  for (let i = mensajes.length - 1; i >= 0; i--) {
-    const m = mensajes[i];
-    if (m.autor === 'asistente' && m.filtros && m.pregunta) {
-      return { pregunta: m.pregunta, filtros: m.filtros, ids: (m.eventos ?? []).map((e) => e.id) };
-    }
-  }
-  return null;
+  const conFiltros = [...mensajes].reverse().find((m) => m.autor === 'asistente' && m.filtros && m.pregunta);
+  const conEventos = [...mensajes].reverse().find((m) => m.autor === 'asistente' && m.eventos && m.eventos.length > 0);
+  // si no hay ni filtros ni eventos anteriores, no hay contexto que mandar
+  if (!conFiltros && !conEventos) return null;
+  return {
+    pregunta: conFiltros?.pregunta ?? '',
+    filtros: conFiltros?.filtros ?? {},
+    ids: (conEventos?.eventos ?? []).map((e) => e.id),
+  };
 };
 
 const formatoDistancia = (km: number) => (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`);
@@ -81,7 +105,7 @@ const guardar = (clave: string, valor: unknown) => {
 
 // boton flotante con una ventanita de chat; es una funcion extra:
 // si la IA no responde, la pagina y los filtros siguen funcionando igual
-const Asistente = () => {
+const Asistente = ({ onVerEnPagina }: Props) => {
   const [abierto, setAbierto] = useState<boolean>(() => leerGuardado(CLAVE_ABIERTO, false));
   const [mensajes, setMensajes] = useState<Mensaje[]>(() => leerGuardado(CLAVE_CHAT, [SALUDO]));
   const [texto, setTexto] = useState('');
@@ -113,7 +137,7 @@ const Asistente = () => {
     if (!repetir) setMensajes((anteriores) => [...anteriores, { autor: 'usuario', texto: limpio }]);
     setPensando(true);
     try {
-      const { respuesta, eventos, necesitaUbicacion, filtros } = await preguntarAsistente(
+      const { respuesta, eventos, necesitaUbicacion, filtros, sugerencias, total, idsTodos } = await preguntarAsistente(
         limpio,
         ubicacionUsar,
         contextoDe(mensajes)
@@ -128,6 +152,9 @@ const Asistente = () => {
           // si pidio la ubicacion, aun no hay resultados que recordar
           pregunta: necesitaUbicacion ? undefined : limpio,
           filtros: necesitaUbicacion ? undefined : filtros,
+          sugerencias,
+          total,
+          idsTodos,
         },
       ]);
     } catch (error) {
@@ -213,7 +240,12 @@ const Asistente = () => {
                               {mes}
                             </span>
                             <span className="asistente-evento-info">
-                              <b>{evento.nombre}</b>
+                              <b>
+                                {etiquetaEstado(evento) && (
+                                  <span className="asistente-etiqueta">{etiquetaEstado(evento)}</span>
+                                )}
+                                {evento.nombre}
+                              </b>
                               <small>
                                 {evento.hora} · {evento.lugar}
                               </small>
@@ -240,6 +272,30 @@ const Asistente = () => {
                       );
                     })}
                   </ul>
+                )}
+
+                {/* llevar todos los resultados a la lista de la pagina */}
+                {onVerEnPagina && m.idsTodos && m.idsTodos.length >= 2 && (
+                  <button
+                    className="asistente-ver-pagina"
+                    onClick={() => {
+                      onVerEnPagina(m.idsTodos!, m.pregunta ?? '');
+                      setAbierto(false);
+                    }}
+                  >
+                    Ver {m.total === m.idsTodos.length ? `los ${m.total}` : 'todos'} en la página →
+                  </button>
+                )}
+
+                {/* preguntas sugeridas: solo en la ultima respuesta */}
+                {i === mensajes.length - 1 && !pensando && m.sugerencias && m.sugerencias.length > 0 && (
+                  <div className="asistente-seguimiento">
+                    {m.sugerencias.map((s) => (
+                      <button key={s} onClick={() => enviar(s)}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
             ))}

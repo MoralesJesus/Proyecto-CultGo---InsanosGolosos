@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import TarjetaEvento from '../components/eventos/TarjetaEvento';
 import Buscador from '../components/buscador/Buscador';
@@ -38,6 +38,15 @@ const Home = () => {
   const [fecha, setFecha] = useState('');
   const [ubicacion, setUbicacion] = useState<{ lat: number; lon: number } | null>(null);
   const [cargandoUbicacion, setCargandoUbicacion] = useState(false);
+  // resultados que mando el asistente a la lista ("Ver en la página")
+  const [delAsistente, setDelAsistente] = useState<{ ids: number[]; pregunta: string } | null>(null);
+  const listaRef = useRef<HTMLParagraphElement>(null);
+
+  const verResultadosAsistente = (ids: number[], pregunta: string) => {
+    setDelAsistente({ ids, pregunta });
+    // se baja hasta la lista para que se vean
+    setTimeout(() => listaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  };
 
 
     // pide permiso al navegador y guarda la ubicacion del usuario
@@ -75,7 +84,9 @@ const Home = () => {
 
       const coincideFecha = fecha === '' || convertirFecha(evento.fecha) === fecha;
 
-      return coincideTexto && coincideGenero && coincideFecha;
+      const coincideAsistente = !delAsistente || delAsistente.ids.includes(evento.id);
+
+      return coincideTexto && coincideGenero && coincideFecha && coincideAsistente;
     })
     
         // si hay ubicacion, ordena por cercania; si no, ordena por fecha
@@ -148,7 +159,16 @@ const Home = () => {
         </div>
       </section>
 
-      <p className="contador">
+      {delAsistente && (
+        <div className="aviso-asistente">
+          <span>
+            Resultados del asistente{delAsistente.pregunta ? `: “${delAsistente.pregunta}”` : ''}
+          </span>
+          <button onClick={() => setDelAsistente(null)}>Ver todos los eventos</button>
+        </div>
+      )}
+
+      <p className="contador" ref={listaRef}>
         {eventosFiltrados.length} {eventosFiltrados.length === 1 ? 'evento encontrado' : 'eventos encontrados'}
       </p>
 
@@ -175,7 +195,7 @@ const Home = () => {
       <Footer />
 
       {/* chat con IA (funcion extra: si la IA no responde, lo demas sigue igual) */}
-      <Asistente />
+      <Asistente onVerEnPagina={verResultadosAsistente} />
     </div>
   );
 };

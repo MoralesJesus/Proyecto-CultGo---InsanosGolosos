@@ -26,6 +26,11 @@ export interface RespuestaAsistente {
   eventos: EventoAsistente[];
   necesitaUbicacion?: boolean;
   filtros?: FiltrosAsistente;
+  // preguntas sugeridas para seguir la conversacion
+  sugerencias?: string[];
+  // cuantos eventos encontro en total (el chat solo muestra algunos) y sus ids
+  total?: number;
+  idsTodos?: number[];
 }
 
 export const preguntarAsistente = async (

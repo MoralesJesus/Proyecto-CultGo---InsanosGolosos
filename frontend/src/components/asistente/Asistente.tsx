@@ -57,16 +57,24 @@ const enlaceRuta = (evento: EventoAsistente) =>
 const contextoDe = (mensajes: Mensaje[]): ContextoAsistente | null => {
   const conFiltros = [...mensajes].reverse().find((m) => m.autor === 'asistente' && m.filtros && m.pregunta);
   const conEventos = [...mensajes].reverse().find((m) => m.autor === 'asistente' && m.eventos && m.eventos.length > 0);
+  // la ultima LISTA (2 o mas eventos): "el segundo" o "el ultimo" se cuentan sobre ella,
+  // no sobre la respuesta de un solo evento que acaba de dar
+  const conLista = [...mensajes].reverse().find((m) => m.autor === 'asistente' && m.eventos && m.eventos.length > 1);
   // si no hay ni filtros ni eventos anteriores, no hay contexto que mandar
   if (!conFiltros && !conEventos) return null;
   return {
     pregunta: conFiltros?.pregunta ?? '',
     filtros: conFiltros?.filtros ?? {},
     ids: (conEventos?.eventos ?? []).map((e) => e.id),
+    idsLista: (conLista?.eventos ?? conEventos?.eventos ?? []).map((e) => e.id),
   };
 };
 
-const formatoDistancia = (km: number) => (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`);
+const formatoDistancia = (km: number) =>
+  km < 0.05 ? 'menos de 50 m' : km < 1 ? `${Math.round(km * 20) * 50} m` : `${km.toFixed(1)} km`;
+
+// la conversacion guardada no crece sin limite
+const MAX_MENSAJES = 40;
 
 // ideas para que el usuario sepa que puede preguntar
 const SUGERENCIAS = [
@@ -74,6 +82,7 @@ const SUGERENCIAS = [
   '¿Qué hay de jazz en diciembre?',
   '¿A qué hora es el de sones istmeños?',
   '¿Qué conciertos me quedan cerca?',
+  '¿Qué hay cerca del Zócalo?',
 ];
 
 const SALUDO: Mensaje = {
@@ -114,12 +123,14 @@ const Asistente = ({ onVerEnPagina }: Props) => {
   const [ubicacion, setUbicacion] = useState<Ubicacion | null>(null);
   const [buscandoUbicacion, setBuscandoUbicacion] = useState(false);
   const finRef = useRef<HTMLDivElement>(null);
+  // evita mandar dos preguntas a la vez si se da doble clic (el estado tarda un instante en cambiar)
+  const ocupadoRef = useRef(false);
 
-  useEffect(() => guardar(CLAVE_CHAT, mensajes), [mensajes]);
+  useEffect(() => guardar(CLAVE_CHAT, mensajes.slice(-MAX_MENSAJES)), [mensajes]);
   useEffect(() => guardar(CLAVE_ABIERTO, abierto), [abierto]);
 
   const nuevaConversacion = () => {
-    if (pensando) return;
+    if (ocupadoRef.current) return;
     setMensajes([SALUDO]);
     setTexto('');
   };
@@ -132,7 +143,8 @@ const Asistente = ({ onVerEnPagina }: Props) => {
   // manda la pregunta al backend; "repetir" = no volver a pintar la burbuja del usuario
   const enviar = async (mensaje: string, ubicacionUsar: Ubicacion | null = ubicacion, repetir = false) => {
     const limpio = mensaje.trim();
-    if (!limpio || pensando) return;
+    if (!limpio || ocupadoRef.current) return;
+    ocupadoRef.current = true;
     setTexto('');
     if (!repetir) setMensajes((anteriores) => [...anteriores, { autor: 'usuario', texto: limpio }]);
     setPensando(true);
@@ -161,13 +173,14 @@ const Asistente = ({ onVerEnPagina }: Props) => {
       const texto = error instanceof Error ? error.message : 'El asistente no está disponible.';
       setMensajes((anteriores) => [...anteriores, { autor: 'asistente', texto, error: true }]);
     } finally {
+      ocupadoRef.current = false;
       setPensando(false);
     }
   };
 
   // el usuario toco "Compartir mi ubicación": se pide permiso y se repite su pregunta
   const compartirUbicacion = async (pregunta: string) => {
-    if (buscandoUbicacion || pensando) return;
+    if (buscandoUbicacion || ocupadoRef.current) return;
     setBuscandoUbicacion(true);
     try {
       const nueva = await obtenerUbicacion();

@@ -43,6 +43,10 @@ const Home = () => {
   const listaRef = useRef<HTMLParagraphElement>(null);
 
   const verResultadosAsistente = (ids: number[], pregunta: string) => {
+    // se quitan los otros filtros para que se vean todos los resultados del asistente
+    setBusqueda('');
+    setGenero('');
+    setFecha('');
     setDelAsistente({ ids, pregunta });
     // se baja hasta la lista para que se vean
     setTimeout(() => listaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);

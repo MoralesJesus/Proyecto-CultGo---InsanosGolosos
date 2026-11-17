@@ -18,7 +18,10 @@ export type FiltrosAsistente = Record<string, unknown>;
 export interface ContextoAsistente {
   pregunta: string;
   filtros: FiltrosAsistente;
+  // eventos de la ultima respuesta con tarjetas ("¿a que hora es ese?")
   ids: number[];
+  // eventos de la ultima lista de 2 o mas ("¿como llego al segundo?")
+  idsLista: number[];
 }
 
 export interface RespuestaAsistente {
@@ -67,8 +70,8 @@ export const obtenerUbicacion = (): Promise<Ubicacion> =>
         rechazar(
           new Error(
             error.code === error.PERMISSION_DENIED
-              ? "No diste permiso para usar tu ubicación. Puedes activarlo en el candado junto a la dirección de la página."
-              : "No pude obtener tu ubicación. Intenta de nuevo."
+              ? 'No diste permiso para usar tu ubicación. Puedes activarlo en el candado junto a la dirección de la página, o preguntarme por un lugar, por ejemplo "¿qué hay cerca del Zócalo?".'
+              : 'No pude obtener tu ubicación. Intenta de nuevo, o pregúntame por un lugar, por ejemplo "¿qué hay cerca del Zócalo?".'
           )
         ),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }

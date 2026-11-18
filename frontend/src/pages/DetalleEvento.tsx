@@ -1,6 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { useEventos } from '../context/useEventos';
 import { partesFecha } from '../utils/formato';
+import { enlaceRuta } from '../utils/mapas';
+import { urlImagen } from '../utils/imagenes';
 
 const DetalleEvento = () => {
   // toma el id que viene en la url, ej: /evento/2 -> id = "2"
@@ -33,7 +35,7 @@ const DetalleEvento = () => {
       <article className="detalle-evento">
         {/* foto arriba, con el titulo encima */}
         <header className={evento.imagen ? 'detalle-portada con-foto' : 'detalle-portada'}>
-          {evento.imagen && <img src={evento.imagen} alt={evento.nombre} className="imagen-detalle" />}
+          {evento.imagen && <img src={urlImagen(evento.imagen)} alt={evento.nombre} className="imagen-detalle" />}
           <div className="detalle-titulo">
             <span className="etiqueta-genero">{evento.genero}</span>
             <h1>{evento.nombre}</h1>
@@ -73,10 +75,9 @@ const DetalleEvento = () => {
             {/* botones de musica: solo aparecen si el evento tiene el link */}
             <div className="botones-musica">
               {evento.lugar && (
+                // abre el camino desde donde esta el usuario, igual que la flechita del chat
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    `${evento.lugar}, ${evento.direccion ?? ''} Oaxaca de Juarez`
-                  )}`}
+                  href={enlaceRuta(evento)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="boton-musica boton-mapa"

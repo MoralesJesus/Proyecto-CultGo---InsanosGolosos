@@ -37,3 +37,7 @@ export const actualizarEvento = ({ id, ...datos }: Evento): Promise<Evento> =>
 
 export const eliminarEvento = (id: number): Promise<void> =>
   pedir<void>(`/api/eventos/${id}`, { method: "DELETE" });
+
+// sube una foto (ya achicada con prepararImagen) y regresa su direccion: "/uploads/abc.jpg"
+export const subirImagen = (datos: string): Promise<{ url: string }> =>
+  pedir<{ url: string }>("/api/imagenes", { method: "POST", body: JSON.stringify({ datos }) });

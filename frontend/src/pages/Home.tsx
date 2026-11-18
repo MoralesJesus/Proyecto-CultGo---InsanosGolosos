@@ -1,8 +1,6 @@
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import TarjetaEvento from '../components/eventos/TarjetaEvento';
 import Buscador from '../components/buscador/Buscador';
-import FiltroGenero from '../components/filtros/FiltroGenero';
 import FiltroFecha from '../components/filtros/FiltroFecha';
 import { useEventos } from '../context/useEventos';
 import { calcularDistancia } from '../utils/distancia';
@@ -11,20 +9,20 @@ import { cerrarSesion } from '../services/firebase';
 import { esAdmin } from '../config/admins';
 import Footer from '../components/layout/Footer';
 import Asistente from '../components/asistente/Asistente';
-
-
-
+import { fechaHora, ordenarAgenda } from '../utils/agenda';
+import type { EventoEnAgenda } from '../utils/agenda';
+import { partesFecha } from '../utils/formato';
+import { enlaceRuta } from '../utils/mapas';
+import { urlImagen } from '../utils/imagenes';
+import CuentaRegresiva from '../components/inicio/CuentaRegresiva';
+import TarjetaCartel from '../components/inicio/TarjetaCartel';
+import MapaCercanos from '../components/inicio/MapaCercanos';
+import '../styles/inicio.css';
 
 // convierte "20/10/2026" a "2026-10-20" para poder comparar con el input tipo date
 const convertirFecha = (fecha: string) => {
   const [dia, mes, anio] = fecha.split('/');
   return `${anio}-${mes}-${dia}`;
-};
-
-// convierte la fecha a un objeto Date real, para poder ordenar cronologicamente
-const aFechaReal = (fecha: string) => {
-  const [dia, mes, anio] = fecha.split('/');
-  return new Date(`${anio}-${mes}-${dia}`);
 };
 
 const Home = () => {
@@ -93,57 +91,135 @@ const Home = () => {
       return coincideTexto && coincideGenero && coincideFecha && coincideAsistente;
     })
     
-        // si hay ubicacion, ordena por cercania; si no, ordena por fecha
-    .sort((a, b) => {
-      if (ubicacion) {
-        const distanciaA = calcularDistancia(ubicacion.lat, ubicacion.lon, a.latitud, a.longitud);
-        const distanciaB = calcularDistancia(ubicacion.lat, ubicacion.lon, b.latitud, b.longitud);
-        return distanciaA - distanciaB;
-      }
-      return aFechaReal(a.fecha).getTime() - aFechaReal(b.fecha).getTime();
-    });
 
-    
+  // grupos de la lista: esta semana (destacados), proximos y los que ya terminaron (al final).
+  // Con ubicacion, dentro de cada grupo se ordena por cercania; si no, por fecha
+  const agenda = ordenarAgenda(
+    eventosFiltrados,
+    ubicacion ? (e) => calcularDistancia(ubicacion.lat, ubicacion.lon, e.latitud, e.longitud) : undefined
+  );
+
+  const distancia = (e: { latitud: number; longitud: number }) =>
+    ubicacion ? calcularDistancia(ubicacion.lat, ubicacion.lon, e.latitud, e.longitud) : undefined;
+
+  // evento destacado de la portada: el mas proximo de TODOS (no depende de los filtros)
+  const todos = ordenarAgenda(eventos);
+  const destacado: EventoEnAgenda | undefined = todos.semana[0] ?? todos.proximo[0];
+  const inicioDestacado = destacado ? fechaHora(destacado.evento) : null;
+  const imagenDestacado = destacado ? urlImagen(destacado.evento.imagen) : undefined;
+  const cuandoDestacado = (item: EventoEnAgenda) => {
+    if (item.etiqueta && item.grupo === 'semana') return item.etiqueta.replace(' · Reprogramado', '');
+    const { semana, dia, mes } = partesFecha(item.evento.fecha);
+    return `${semana} ${dia} ${mes}`;
+  };
+
+  // fila de la lista ("Más adelante" y "Concluidos")
+  const fila = ({ evento, etiqueta, grupo }: EventoEnAgenda) => {
+    const { dia, mes, semana } = partesFecha(evento.fecha);
+    const km = distancia(evento);
+    return (
+      <Link key={evento.id} to={`/evento/${evento.id}`} className={`fila-evento${grupo === 'terminado' ? ' pasada' : ''}`}>
+        <span className="fila-fecha">
+          <b>{dia}</b> {mes}
+          <small>{semana}</small>
+        </span>
+        <span className="fila-nombre">
+          {etiqueta && <span className="fila-etiqueta">{etiqueta}</span>}
+          {evento.nombre}
+          <small>
+            {evento.genero} · {evento.hora}
+          </small>
+        </span>
+        <span className="fila-lugar">
+          {evento.lugar}
+          {km !== undefined && grupo !== 'terminado' && <small>a {km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`}</small>}
+        </span>
+        <span className="fila-ver">Ver →</span>
+      </Link>
+    );
+  };
 
   return (
-    <div className="contenedor-home">
-      {/* barra del usuario: va dentro de la pagina (no fija) para que no se encime al bajar */}
-      <header className="barra-usuario">
-        <span className="logo-barra">CultGo!</span>
-        <div className="barra-sesion">
-          {user ? (
+    <div className="inicio">
+      {/* ---------- portada con el proximo evento ---------- */}
+      <header className="inicio-hero">
+        {imagenDestacado && (
+          <div className="hero-foto" style={{ backgroundImage: `url(${imagenDestacado})` }} aria-hidden="true" />
+        )}
+        <div className="reflector reflector-1" aria-hidden="true" />
+        <div className="reflector reflector-2" aria-hidden="true" />
+        <div className="hero-degradado" aria-hidden="true" />
+
+        <nav className="inicio-nav">
+          <Link to="/" className="inicio-logo">
+            CultGo<span>!</span>
+          </Link>
+          <div className="inicio-enlaces">
+            <a href="#eventos">Explorar</a>
+            <a href="#semana">Esta semana</a>
+            <a href="#mapa">Mapa</a>
+          </div>
+          <div className="inicio-sesion">
+            {user ? (
+              <>
+                <span className="saludo">Hola, {user.displayName || user.email}</span>
+                {/* solo los correos de config/admins.ts ven este boton */}
+                {esAdmin(user.email) && (
+                  <Link to="/admin" className="boton-contorno boton-admin-nav">
+                    Panel de admin
+                  </Link>
+                )}
+                <button onClick={cerrarSesion} className="boton-contorno">
+                  Cerrar sesión
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className="boton-contorno">
+                Iniciar sesión
+              </Link>
+            )}
+          </div>
+        </nav>
+
+        <div className="hero-contenido">
+          {destacado ? (
             <>
-              <span className="saludo">Hola, {user.displayName || user.email}</span>
-              {/* solo los correos de config/admins.ts ven este boton */}
-              {esAdmin(user.email) && (
-                <Link to="/admin" className="boton-barra boton-admin">
-                  Panel de admin
+              <p className="hero-antetitulo">
+                <span className="punto-en-vivo" aria-hidden="true" />
+                {destacado.dias === 0 ? 'Hoy en Oaxaca' : 'Próximo evento'}
+                <span className="ecualizador" aria-hidden="true">
+                  <span /> <span /> <span /> <span />
+                </span>
+              </p>
+              <h1 className="hero-titulo">{destacado.evento.nombre}</h1>
+              <p className="hero-datos">
+                {destacado.evento.artista} · <b>{cuandoDestacado(destacado)}</b>, {destacado.evento.hora} ·{' '}
+                {destacado.evento.lugar}
+              </p>
+              {inicioDestacado && <CuentaRegresiva meta={inicioDestacado} />}
+              <div className="hero-botones">
+                <Link to={`/evento/${destacado.evento.id}`} className="boton-principal">
+                  Ver evento
                 </Link>
-              )}
-              <button onClick={cerrarSesion} className="boton-barra">
-                Cerrar sesión
-              </button>
+                <a href={enlaceRuta(destacado.evento)} target="_blank" rel="noopener noreferrer" className="boton-vidrio">
+                  Cómo llegar
+                </a>
+              </div>
             </>
           ) : (
-            <Link to="/login" className="boton-barra">
-              Iniciar sesión
-            </Link>
+            <>
+              <p className="hero-antetitulo">Oaxaca de Juárez</p>
+              <h1 className="hero-titulo">La música de Oaxaca</h1>
+              <p className="hero-datos">Encuentra conciertos, sones, marimbas y jazz cerca de ti.</p>
+            </>
           )}
         </div>
       </header>
 
-      <section className="portada">
-        <h1 className="titulo-animado">CultGo!</h1>
-        <p className="subtitulo">Encuentra eventos musicales en Oaxaca de Juárez</p>
-      </section>
-
-      {/* buscador y filtros */}
-      <section className="panel-filtros" aria-label="Buscar y filtrar eventos">
-        <Buscador valor={busqueda} onCambio={setBusqueda} />
-
-        <div className="fila-filtros">
-          <FiltroGenero generoSeleccionado={genero} generos={generosDisponibles} onCambio={setGenero} />
-
+      {/* ---------- buscador y filtros ---------- */}
+      <section id="eventos" className="inicio-filtros" aria-label="Buscar y filtrar eventos">
+        <div className="filtros-fila">
+          <Buscador valor={busqueda} onCambio={setBusqueda} />
           <div className="grupo-fecha">
             <FiltroFecha fechaSeleccionada={fecha} onCambio={setFecha} />
             {fecha && (
@@ -152,7 +228,6 @@ const Home = () => {
               </button>
             )}
           </div>
-
           <button onClick={obtenerUbicacion} disabled={cargandoUbicacion} className="boton-cercania">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" />
@@ -160,6 +235,20 @@ const Home = () => {
             </svg>
             {cargandoUbicacion ? 'Buscando ubicación...' : ubicacion ? 'Ordenado por cercanía' : 'Ordenar por cercanía'}
           </button>
+        </div>
+
+        <div className="pildoras" role="group" aria-label="Filtrar por género">
+          {['', ...generosDisponibles].map((g) => (
+            <button
+              key={g || 'todos'}
+              type="button"
+              className={`pildora${genero === g ? ' activa' : ''}`}
+              aria-pressed={genero === g}
+              onClick={() => setGenero(g)}
+            >
+              {g || 'Todos'}
+            </button>
+          ))}
         </div>
       </section>
 
@@ -172,7 +261,7 @@ const Home = () => {
         </div>
       )}
 
-      <p className="contador" ref={listaRef}>
+      <p className="inicio-contador" ref={listaRef}>
         {eventosFiltrados.length} {eventosFiltrados.length === 1 ? 'evento encontrado' : 'eventos encontrados'}
       </p>
 
@@ -187,13 +276,62 @@ const Home = () => {
             : 'No hay eventos disponibles con esos filtros.'}
         </p>
       ) : (
-        <div className="lista-eventos">
-          {eventosFiltrados.map((evento) => (
-            <Link key={evento.id} to={`/evento/${evento.id}`} className="enlace-tarjeta">
-              <TarjetaEvento evento={evento} />
-            </Link>
-          ))}
-        </div>
+        <>
+          {/* ---------- esta semana: carteles ---------- */}
+          {agenda.semana.length > 0 && (
+            <section id="semana" className="inicio-seccion" aria-label="Esta semana">
+              <div className="seccion-cabeza">
+                <h2>Esta semana</h2>
+                <span>
+                  {agenda.semana.length} {agenda.semana.length === 1 ? 'evento' : 'eventos'} en los próximos 7 días
+                </span>
+              </div>
+              <div className="rejilla-carteles">
+                {agenda.semana.map(({ evento, etiqueta }, i) => (
+                  <TarjetaCartel
+                    key={evento.id}
+                    evento={evento}
+                    etiqueta={etiqueta}
+                    distanciaKm={distancia(evento)}
+                    orden={i}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* ---------- mapa ---------- */}
+          <div className="inicio-seccion">
+            <MapaCercanos
+              eventos={[...agenda.semana, ...agenda.proximo]}
+              ubicacion={ubicacion}
+              cargandoUbicacion={cargandoUbicacion}
+              onPedirUbicacion={obtenerUbicacion}
+            />
+          </div>
+
+          {/* ---------- mas adelante ---------- */}
+          {agenda.proximo.length > 0 && (
+            <section className="inicio-seccion" aria-label="Más adelante">
+              <div className="seccion-cabeza">
+                <h2>Más adelante</h2>
+                <span>Del más cercano al más lejano</span>
+              </div>
+              <div className="lista-filas">{agenda.proximo.map(fila)}</div>
+            </section>
+          )}
+
+          {/* ---------- concluidos ---------- */}
+          {agenda.terminado.length > 0 && (
+            <section className="inicio-seccion" aria-label="Concluidos">
+              <div className="seccion-cabeza">
+                <h2 className="titulo-apagado">Concluidos</h2>
+                <span>Finalizados o cancelados</span>
+              </div>
+              <div className="lista-filas">{agenda.terminado.map(fila)}</div>
+            </section>
+          )}
+        </>
       )}
 
       <Footer />

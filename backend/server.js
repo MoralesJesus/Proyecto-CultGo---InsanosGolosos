@@ -7,6 +7,10 @@ const { requiereAdmin } = require('./auth');
 
 const app = express();
 app.use(cors());
+
+// fotos subidas desde el panel (va antes de express.json porque acepta archivos mas grandes)
+require('./imagenes')(app, requiereAdmin);
+
 app.use(express.json());
 
 // Campos del evento: nombre en la API (frontend) -> columna en PostgreSQL

@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEventos } from "../../context/useEventos";
 import { a12Horas, a24Horas, dmaAIso, esExpirado, isoADma } from "../../utils/formato";
 import type { EstadoEvento, Evento } from "../../types";
+import CampoImagen from "../../components/admin/CampoImagen";
 
 const ESTADOS: { valor: EstadoEvento; texto: string }[] = [
   { valor: "activo", texto: "Activo" },
@@ -259,16 +260,7 @@ function Formulario({ evento }: { evento?: Evento }) {
           />
         </label>
 
-        <label className="admin-campo ancho">
-          <span>Link de la imagen</span>
-          <input
-            type="url"
-            name="imagen"
-            placeholder="https://..."
-            value={datos.imagen}
-            onChange={cambiar}
-          />
-        </label>
+        <CampoImagen valor={datos.imagen} onCambio={(imagen) => setDatos((d) => ({ ...d, imagen }))} />
 
         {error && <p className="admin-error">{error}</p>}
 

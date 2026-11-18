@@ -600,3 +600,97 @@ a.admin-tarjeta-expirados strong {
 a.admin-tarjeta-expirados:hover {
   border-color: var(--grana);
 }
+
+/* ---------- foto del evento: subir archivo o pegar enlace ---------- */
+.campo-imagen {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  background-color: var(--anil-900);
+  border: 1.5px dashed var(--borde-fuerte);
+  border-radius: 10px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.campo-imagen.arrastrando {
+  border-color: var(--cempasuchil);
+  background-color: rgba(242, 169, 59, 0.08);
+}
+
+.campo-imagen.con-foto {
+  border-style: solid;
+}
+
+.campo-imagen-vista,
+.campo-imagen-vacio {
+  flex-shrink: 0;
+  width: 160px;
+  height: 100px;
+  border-radius: 8px;
+}
+
+.campo-imagen-vista {
+  object-fit: cover;
+}
+
+.campo-imagen-vacio {
+  display: grid;
+  place-items: center;
+  color: var(--texto-tenue);
+  background-color: var(--anil-800);
+}
+
+.campo-imagen-vacio svg {
+  width: 36px;
+  height: 36px;
+}
+
+.campo-imagen-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.admin-campo .campo-imagen-texto {
+  margin: 0;
+  font-size: 14px;
+  color: var(--texto-suave);
+}
+
+.campo-imagen-botones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.campo-imagen-enlace {
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--texto-suave);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.campo-imagen-enlace:hover {
+  color: var(--texto);
+}
+
+@media (max-width: 640px) {
+  .campo-imagen {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .campo-imagen-vista,
+  .campo-imagen-vacio {
+    width: 100%;
+    height: 160px;
+  }
+}

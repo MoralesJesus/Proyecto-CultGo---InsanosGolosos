@@ -5,28 +5,243 @@
   right: 24px;
   bottom: 24px;
   z-index: 50;
-  width: 60px;
-  height: 60px;
+  width: 66px;
+  height: 66px;
   display: grid;
   place-items: center;
-  font-size: 26px;
-  color: var(--tinta);
-  background-color: var(--cempasuchil);
-  border: none;
+  padding: 6px;
+  color: var(--papel);
+  background: radial-gradient(circle at 50% 35%, var(--anil-600), var(--anil-900) 75%);
+  border: 2px solid var(--cempasuchil);
   border-radius: 50%;
-  box-shadow: 0 10px 28px rgba(8, 9, 22, 0.55);
-  transition: transform var(--rapido) ease, background-color var(--rapido) ease;
+  box-shadow: 0 10px 28px rgba(8, 9, 22, 0.55), 0 0 0 0 rgba(242, 169, 59, 0.5);
+  animation: botonLlama 3s ease-out infinite;
+  transition: transform var(--rapido) ease, border-color var(--rapido) ease;
 }
 
 .asistente-boton:hover {
-  transform: scale(1.06);
-  background-color: var(--cempasuchil-claro);
+  transform: scale(1.08);
+  border-color: var(--cempasuchil-claro);
+}
+
+.asistente-boton.abierto {
+  animation: none;
+}
+
+.asistente-boton-x {
+  font-size: 30px;
+  line-height: 1;
+}
+
+/* aro que "late" alrededor del boton para llamar la atencion */
+@keyframes botonLlama {
+  0%, 60%, 100% {
+    box-shadow: 0 10px 28px rgba(8, 9, 22, 0.55), 0 0 0 0 rgba(242, 169, 59, 0.45);
+  }
+  30% {
+    box-shadow: 0 10px 28px rgba(8, 9, 22, 0.55), 0 0 0 12px rgba(242, 169, 59, 0);
+  }
+}
+
+/* ---- robotito ---- */
+
+.robotito {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.robot-cuerpo {
+  transform-box: fill-box;
+  transform-origin: 50% 90%;
+  animation: robotFlota 3s ease-in-out infinite;
+}
+
+.robot-cabeza {
+  fill: var(--papel);
+}
+
+.robot-pantalla {
+  fill: var(--anil-900);
+}
+
+.robot-oreja {
+  fill: var(--cempasuchil);
+}
+
+.robot-palito {
+  stroke: var(--papel);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.robot-foco {
+  fill: var(--cempasuchil);
+  animation: robotFoco 2s ease-in-out infinite;
+}
+
+.robot-cachete {
+  fill: var(--grana);
+  opacity: 0.55;
+}
+
+.robot-mirada {
+  transform: translate(var(--mx, 0px), var(--my, 0px));
+  transition: transform 0.12s ease-out;
+}
+
+.robot-ojos ellipse {
+  fill: var(--cempasuchil-claro);
+  filter: drop-shadow(0 0 2px var(--cempasuchil));
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: robotParpadea 4.5s infinite;
+}
+
+.robot-ojos-felices path,
+.robot-sonrisa,
+.robot-boca-seria {
+  fill: none;
+  stroke: var(--cempasuchil-claro);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.robot-ojos-felices,
+.robot-boca-seria {
+  display: none;
+}
+
+/* pensando: busca con la mirada y la antena parpadea rapido */
+.robotito-pensando .robot-mirada {
+  animation: robotBusca 1.3s ease-in-out infinite;
+}
+
+.robotito-pensando .robot-foco {
+  fill: var(--cantera);
+  animation-duration: 0.5s;
+}
+
+.robotito-pensando .robot-sonrisa {
+  display: none;
+}
+
+.robotito-pensando .robot-boca-seria {
+  display: inline;
+}
+
+/* feliz: ojitos ^ ^ y un brinquito */
+.robotito-feliz .robot-ojos {
+  display: none;
+}
+
+.robotito-feliz .robot-ojos-felices {
+  display: inline;
+}
+
+.robotito-feliz .robot-cuerpo {
+  animation: robotBrinca 0.6s ease-out 2;
+}
+
+.robotito-feliz .robot-cachete {
+  opacity: 0.9;
+}
+
+/* al pasar el mouse por el boton, ladea la cabeza como saludando */
+.asistente-boton:hover .robotito-reposo .robot-cuerpo {
+  animation: robotSaluda 0.9s ease-in-out;
+}
+
+@keyframes robotFlota {
+  0%, 100% { transform: translateY(1.5px); }
+  50% { transform: translateY(-1.5px); }
+}
+
+@keyframes robotParpadea {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+
+@keyframes robotFoco {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 3px var(--cempasuchil)); }
+  50% { opacity: 0.55; filter: none; }
+}
+
+@keyframes robotBusca {
+  0%, 100% { transform: translateX(-2.5px); }
+  50% { transform: translateX(2.5px); }
+}
+
+@keyframes robotBrinca {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-4px) scale(1.04, 0.97); }
+}
+
+@keyframes robotSaluda {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-12deg); }
+  60% { transform: rotate(9deg); }
+}
+
+/* globito de saludo junto al boton */
+.asistente-globo {
+  position: fixed;
+  right: 102px;
+  bottom: 38px;
+  z-index: 50;
+  max-width: 220px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  color: var(--tinta);
+  background-color: var(--papel);
+  border: none;
+  border-radius: 14px 14px 4px 14px;
+  box-shadow: 0 10px 28px rgba(8, 9, 22, 0.5);
+  animation: globoAparece 0.4s var(--salida), globoFlota 3s ease-in-out 0.4s infinite;
+  cursor: pointer;
+}
+
+.asistente-globo:hover {
+  background-color: #fff8ea;
+}
+
+@keyframes globoFlota {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.asistente-globo:hover::after {
+  border-left-color: #fff8ea;
+}
+
+.asistente-globo::after {
+  content: '';
+  position: absolute;
+  right: -7px;
+  bottom: 10px;
+  border-width: 7px 0 7px 9px;
+  border-style: solid;
+  border-color: transparent transparent transparent var(--papel);
+}
+
+@keyframes globoAparece {
+  from {
+    opacity: 0;
+    transform: translateX(10px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .asistente-ventana {
   position: fixed;
   right: 24px;
-  bottom: 96px;
+  bottom: 104px;
   z-index: 50;
   width: min(380px, calc(100vw - 32px));
   height: min(560px, calc(100svh - 130px));
@@ -66,6 +281,21 @@
   font-family: var(--fuente-titulo);
   font-size: 22px;
   color: var(--papel);
+}
+
+.asistente-avatar {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  padding: 4px;
+  background-color: var(--anil-700);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: 50%;
+}
+
+.asistente-titulo {
+  flex: 1;
+  min-width: 0;
 }
 
 .asistente-encabezado span {
@@ -421,6 +651,24 @@
 
   .asistente-ventana {
     right: 16px;
-    bottom: 88px;
+    bottom: 96px;
+  }
+
+  .asistente-globo {
+    right: 90px;
+    bottom: 28px;
+    max-width: 180px;
+  }
+}
+
+/* si el sistema pide menos movimiento, el robotito se queda quieto */
+@media (prefers-reduced-motion: reduce) {
+  .asistente-boton,
+  .robot-cuerpo,
+  .robot-foco,
+  .robot-ojos ellipse,
+  .robotito-pensando .robot-mirada,
+  .asistente-globo {
+    animation: none !important;
   }
 }

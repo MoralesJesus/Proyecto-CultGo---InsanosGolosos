@@ -9,6 +9,8 @@ import type {
   Ubicacion,
 } from '../../services/asistenteService';
 import { partesFecha } from '../../utils/formato';
+import { enlaceRuta } from '../../utils/mapas';
+import Robotito from './Robotito';
 import '../../styles/asistente.css';
 
 interface Mensaje {
@@ -41,14 +43,6 @@ const etiquetaEstado = (evento: EventoAsistente): string | null => {
   if (evento.estado === 'finalizado' || new Date(anio, mes - 1, dia) < hoy) return 'Ya pasó';
   return null;
 };
-
-// ruta en Google Maps desde donde esta el usuario hasta el evento
-const enlaceRuta = (evento: EventoAsistente) =>
-  Number.isFinite(evento.latitud) && Number.isFinite(evento.longitud)
-    ? `https://www.google.com/maps/dir/?api=1&destination=${evento.latitud},${evento.longitud}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        `${evento.lugar}, ${evento.direccion ?? ''} Oaxaca de Juarez`
-      )}`;
 
 // contexto de la siguiente pregunta:
 // - filtros: los de la ultima respuesta (para "¿y en enero?")
@@ -125,6 +119,30 @@ const Asistente = ({ onVerEnPagina }: Props) => {
   const finRef = useRef<HTMLDivElement>(null);
   // evita mandar dos preguntas a la vez si se da doble clic (el estado tarda un instante en cambiar)
   const ocupadoRef = useRef(false);
+  // el robotito pone ojitos felices un momento cuando acaba de responder
+  const [feliz, setFeliz] = useState(false);
+  // el globito "¿Te ayudo?" se muestra siempre que el chat este cerrado
+  const [globo, setGlobo] = useState(false);
+
+  useEffect(() => {
+    if (!feliz) return;
+    const t = setTimeout(() => setFeliz(false), 1800);
+    return () => clearTimeout(t);
+  }, [feliz]);
+
+  // con el chat cerrado, el robotito saluda despues de un momento y se queda el globito
+  useEffect(() => {
+    if (abierto) return;
+    const mostrar = setTimeout(() => setGlobo(true), 1200);
+    return () => {
+      clearTimeout(mostrar);
+      setGlobo(false);
+    };
+  }, [abierto]);
+
+  const alternar = () => setAbierto((a) => !a);
+
+  const estadoRobot = pensando || buscandoUbicacion ? 'pensando' : feliz ? 'feliz' : 'reposo';
 
   useEffect(() => guardar(CLAVE_CHAT, mensajes.slice(-MAX_MENSAJES)), [mensajes]);
   useEffect(() => guardar(CLAVE_ABIERTO, abierto), [abierto]);
@@ -169,6 +187,7 @@ const Asistente = ({ onVerEnPagina }: Props) => {
           idsTodos,
         },
       ]);
+      setFeliz(true);
     } catch (error) {
       const texto = error instanceof Error ? error.message : 'El asistente no está disponible.';
       setMensajes((anteriores) => [...anteriores, { autor: 'asistente', texto, error: true }]);
@@ -206,9 +225,12 @@ const Asistente = ({ onVerEnPagina }: Props) => {
       {abierto && (
         <section className="asistente-ventana" aria-label="Asistente de CultGo">
           <header className="asistente-encabezado">
-            <div>
+            <Robotito estado={estadoRobot} className="asistente-avatar" />
+            <div className="asistente-titulo">
               <strong>Asistente CultGo!</strong>
-              <span>Busca eventos escribiendo como hablas</span>
+              <span aria-live="polite">
+                {estadoRobot === 'pensando' ? 'Buscando eventos...' : 'Busca eventos como hablas'}
+              </span>
             </div>
             <div className="asistente-acciones">
               {mensajes.length > 1 && (
@@ -347,12 +369,18 @@ const Asistente = ({ onVerEnPagina }: Props) => {
         </section>
       )}
 
+      {globo && !abierto && (
+        <button className="asistente-globo" onClick={alternar}>
+          ¡Hola! ¿Te ayudo a encontrar un evento? 🎶
+        </button>
+      )}
+
       <button
-        className="asistente-boton"
-        onClick={() => setAbierto((a) => !a)}
+        className={`asistente-boton${abierto ? ' abierto' : ''}`}
+        onClick={alternar}
         aria-label={abierto ? 'Cerrar asistente' : 'Abrir asistente'}
       >
-        {abierto ? '×' : '💬'}
+        {abierto ? <span className="asistente-boton-x">×</span> : <Robotito estado={estadoRobot} sigueMouse />}
       </button>
     </>
   );

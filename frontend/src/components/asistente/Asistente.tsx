@@ -1,23 +1,88 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import type { Evento } from '../../types';
-import { preguntarAsistente } from '../../services/asistenteService';
+import { obtenerUbicacion, preguntarAsistente } from '../../services/asistenteService';
+import type {
+  ContextoAsistente,
+  EventoAsistente,
+  FiltrosAsistente,
+  Ubicacion,
+} from '../../services/asistenteService';
 import { partesFecha } from '../../utils/formato';
 import '../../styles/asistente.css';
 
 interface Mensaje {
   autor: 'usuario' | 'asistente';
   texto: string;
-  eventos?: Evento[];
+  eventos?: EventoAsistente[];
   error?: boolean;
+  // si el asistente pidio la ubicacion, aqui se guarda la pregunta para repetirla
+  pideUbicacion?: string;
+  // para recordar la busqueda: que pregunto el usuario y que filtros se usaron
+  pregunta?: string;
+  filtros?: FiltrosAsistente;
+  sugerencias?: string[];
+  total?: number;
+  idsTodos?: number[];
 }
+
+interface Props {
+  // muestra en la lista de la pagina todos los eventos que encontro el asistente
+  onVerEnPagina?: (ids: number[], pregunta: string) => void;
+}
+
+// etiqueta para eventos que ya pasaron, se cancelaron o cambiaron de fecha
+const etiquetaEstado = (evento: EventoAsistente): string | null => {
+  if (evento.estado === 'cancelado') return 'Cancelado';
+  if (evento.estado === 'reprogramado') return 'Reprogramado';
+  const [dia, mes, anio] = evento.fecha.split('/').map(Number);
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  if (evento.estado === 'finalizado' || new Date(anio, mes - 1, dia) < hoy) return 'Ya pasó';
+  return null;
+};
+
+// ruta en Google Maps desde donde esta el usuario hasta el evento
+const enlaceRuta = (evento: EventoAsistente) =>
+  Number.isFinite(evento.latitud) && Number.isFinite(evento.longitud)
+    ? `https://www.google.com/maps/dir/?api=1&destination=${evento.latitud},${evento.longitud}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        `${evento.lugar}, ${evento.direccion ?? ''} Oaxaca de Juarez`
+      )}`;
+
+// contexto de la siguiente pregunta:
+// - filtros: los de la ultima respuesta (para "¿y en enero?")
+// - ids: los de la ultima respuesta QUE MOSTRO eventos (para "¿como llego al segundo?"),
+//   aunque despues haya habido una respuesta sin tarjetas
+const contextoDe = (mensajes: Mensaje[]): ContextoAsistente | null => {
+  const conFiltros = [...mensajes].reverse().find((m) => m.autor === 'asistente' && m.filtros && m.pregunta);
+  const conEventos = [...mensajes].reverse().find((m) => m.autor === 'asistente' && m.eventos && m.eventos.length > 0);
+  // la ultima LISTA (2 o mas eventos): "el segundo" o "el ultimo" se cuentan sobre ella,
+  // no sobre la respuesta de un solo evento que acaba de dar
+  const conLista = [...mensajes].reverse().find((m) => m.autor === 'asistente' && m.eventos && m.eventos.length > 1);
+  // si no hay ni filtros ni eventos anteriores, no hay contexto que mandar
+  if (!conFiltros && !conEventos) return null;
+  return {
+    pregunta: conFiltros?.pregunta ?? '',
+    filtros: conFiltros?.filtros ?? {},
+    ids: (conEventos?.eventos ?? []).map((e) => e.id),
+    idsLista: (conLista?.eventos ?? conEventos?.eventos ?? []).map((e) => e.id),
+  };
+};
+
+const formatoDistancia = (km: number) =>
+  km < 0.05 ? 'menos de 50 m' : km < 1 ? `${Math.round(km * 20) * 50} m` : `${km.toFixed(1)} km`;
+
+// la conversacion guardada no crece sin limite
+const MAX_MENSAJES = 40;
 
 // ideas para que el usuario sepa que puede preguntar
 const SUGERENCIAS = [
   'Quiero rock este fin de semana',
   '¿Qué hay de jazz en diciembre?',
-  '¿Qué eventos hay en el centro?',
+  '¿A qué hora es el de sones istmeños?',
+  '¿Qué conciertos me quedan cerca?',
+  '¿Qué hay cerca del Zócalo?',
 ];
 
 const SALUDO: Mensaje = {
@@ -49,18 +114,23 @@ const guardar = (clave: string, valor: unknown) => {
 
 // boton flotante con una ventanita de chat; es una funcion extra:
 // si la IA no responde, la pagina y los filtros siguen funcionando igual
-const Asistente = () => {
+const Asistente = ({ onVerEnPagina }: Props) => {
   const [abierto, setAbierto] = useState<boolean>(() => leerGuardado(CLAVE_ABIERTO, false));
   const [mensajes, setMensajes] = useState<Mensaje[]>(() => leerGuardado(CLAVE_CHAT, [SALUDO]));
   const [texto, setTexto] = useState('');
   const [pensando, setPensando] = useState(false);
+  // la ubicacion solo se guarda en memoria (no en sessionStorage) por privacidad
+  const [ubicacion, setUbicacion] = useState<Ubicacion | null>(null);
+  const [buscandoUbicacion, setBuscandoUbicacion] = useState(false);
   const finRef = useRef<HTMLDivElement>(null);
+  // evita mandar dos preguntas a la vez si se da doble clic (el estado tarda un instante en cambiar)
+  const ocupadoRef = useRef(false);
 
-  useEffect(() => guardar(CLAVE_CHAT, mensajes), [mensajes]);
+  useEffect(() => guardar(CLAVE_CHAT, mensajes.slice(-MAX_MENSAJES)), [mensajes]);
   useEffect(() => guardar(CLAVE_ABIERTO, abierto), [abierto]);
 
   const nuevaConversacion = () => {
-    if (pensando) return;
+    if (ocupadoRef.current) return;
     setMensajes([SALUDO]);
     setTexto('');
   };
@@ -70,20 +140,59 @@ const Asistente = () => {
     finRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes, pensando]);
 
-  const enviar = async (mensaje: string) => {
+  // manda la pregunta al backend; "repetir" = no volver a pintar la burbuja del usuario
+  const enviar = async (mensaje: string, ubicacionUsar: Ubicacion | null = ubicacion, repetir = false) => {
     const limpio = mensaje.trim();
-    if (!limpio || pensando) return;
+    if (!limpio || ocupadoRef.current) return;
+    ocupadoRef.current = true;
     setTexto('');
-    setMensajes((anteriores) => [...anteriores, { autor: 'usuario', texto: limpio }]);
+    if (!repetir) setMensajes((anteriores) => [...anteriores, { autor: 'usuario', texto: limpio }]);
     setPensando(true);
     try {
-      const { respuesta, eventos } = await preguntarAsistente(limpio);
-      setMensajes((anteriores) => [...anteriores, { autor: 'asistente', texto: respuesta, eventos }]);
+      const { respuesta, eventos, necesitaUbicacion, filtros, sugerencias, total, idsTodos } = await preguntarAsistente(
+        limpio,
+        ubicacionUsar,
+        contextoDe(mensajes)
+      );
+      setMensajes((anteriores) => [
+        ...anteriores,
+        {
+          autor: 'asistente',
+          texto: respuesta,
+          eventos,
+          pideUbicacion: necesitaUbicacion ? limpio : undefined,
+          // si pidio la ubicacion, aun no hay resultados que recordar
+          pregunta: necesitaUbicacion ? undefined : limpio,
+          filtros: necesitaUbicacion ? undefined : filtros,
+          sugerencias,
+          total,
+          idsTodos,
+        },
+      ]);
     } catch (error) {
       const texto = error instanceof Error ? error.message : 'El asistente no está disponible.';
       setMensajes((anteriores) => [...anteriores, { autor: 'asistente', texto, error: true }]);
     } finally {
+      ocupadoRef.current = false;
       setPensando(false);
+    }
+  };
+
+  // el usuario toco "Compartir mi ubicación": se pide permiso y se repite su pregunta
+  const compartirUbicacion = async (pregunta: string) => {
+    if (buscandoUbicacion || ocupadoRef.current) return;
+    setBuscandoUbicacion(true);
+    try {
+      const nueva = await obtenerUbicacion();
+      setUbicacion(nueva);
+      // el boton ya no hace falta en ese mensaje
+      setMensajes((anteriores) => anteriores.map((m) => (m.pideUbicacion ? { ...m, pideUbicacion: undefined } : m)));
+      setBuscandoUbicacion(false);
+      await enviar(pregunta, nueva, true);
+    } catch (error) {
+      setBuscandoUbicacion(false);
+      const texto = error instanceof Error ? error.message : 'No pude obtener tu ubicación.';
+      setMensajes((anteriores) => [...anteriores, { autor: 'asistente', texto, error: true }]);
     }
   };
 
@@ -123,28 +232,83 @@ const Asistente = () => {
             {mensajes.map((m, i) => (
               <div key={i} className={`asistente-burbuja ${m.autor}${m.error ? ' con-error' : ''}`}>
                 <p>{m.texto}</p>
+                {m.pideUbicacion && (
+                  <button
+                    className="asistente-ubicacion"
+                    onClick={() => compartirUbicacion(m.pideUbicacion!)}
+                    disabled={buscandoUbicacion || pensando}
+                  >
+                    📍 {buscandoUbicacion ? 'Buscando tu ubicación...' : 'Compartir mi ubicación'}
+                  </button>
+                )}
                 {m.eventos && m.eventos.length > 0 && (
                   <ul className="asistente-eventos">
                     {m.eventos.map((evento) => {
                       const { dia, mes } = partesFecha(evento.fecha);
                       return (
-                        <li key={evento.id}>
+                        <li key={evento.id} className="asistente-evento-fila">
                           <Link to={`/evento/${evento.id}`} className="asistente-evento">
                             <span className="asistente-fecha">
                               <b>{dia}</b>
                               {mes}
                             </span>
                             <span className="asistente-evento-info">
-                              <b>{evento.nombre}</b>
+                              <b>
+                                {etiquetaEstado(evento) && (
+                                  <span className="asistente-etiqueta">{etiquetaEstado(evento)}</span>
+                                )}
+                                {evento.nombre}
+                              </b>
                               <small>
                                 {evento.hora} · {evento.lugar}
                               </small>
+                              {evento.distanciaKm !== undefined && (
+                                <small className="asistente-distancia">
+                                  📍 a {formatoDistancia(evento.distanciaKm)}
+                                </small>
+                              )}
                             </span>
                           </Link>
+                          <a
+                            href={enlaceRuta(evento)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="asistente-ruta"
+                            aria-label={`Cómo llegar a ${evento.nombre}`}
+                            title="Cómo llegar"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                              <path d="M3 11l18-8-8 18-2-8-8-2z" />
+                            </svg>
+                          </a>
                         </li>
                       );
                     })}
                   </ul>
+                )}
+
+                {/* llevar todos los resultados a la lista de la pagina */}
+                {onVerEnPagina && m.idsTodos && m.idsTodos.length >= 2 && (
+                  <button
+                    className="asistente-ver-pagina"
+                    onClick={() => {
+                      onVerEnPagina(m.idsTodos!, m.pregunta ?? '');
+                      setAbierto(false);
+                    }}
+                  >
+                    Ver {m.total === m.idsTodos.length ? `los ${m.total}` : 'todos'} en la página →
+                  </button>
+                )}
+
+                {/* preguntas sugeridas: solo en la ultima respuesta */}
+                {i === mensajes.length - 1 && !pensando && m.sugerencias && m.sugerencias.length > 0 && (
+                  <div className="asistente-seguimiento">
+                    {m.sugerencias.map((s) => (
+                      <button key={s} onClick={() => enviar(s)}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
             ))}
@@ -153,7 +317,7 @@ const Asistente = () => {
             {mensajes.length === 1 && (
               <div className="asistente-sugerencias">
                 {SUGERENCIAS.map((s) => (
-                  <button key={s} onClick={() => enviar(s)}>
+                  <button key={s} onClick={() => enviar(s)} disabled={pensando}>
                     {s}
                   </button>
                 ))}

@@ -3,16 +3,52 @@ import type { Evento } from "../types";
 // el asistente vive en el backend (backend/asistente.js); la clave de la IA nunca llega al navegador
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
-export interface RespuestaAsistente {
-  respuesta: string;
-  eventos: Evento[];
+export interface Ubicacion {
+  lat: number;
+  lon: number;
 }
 
-export const preguntarAsistente = async (mensaje: string): Promise<RespuestaAsistente> => {
+// el backend agrega la distancia cuando el usuario compartio su ubicacion
+export type EventoAsistente = Evento & { distanciaKm?: number };
+
+// filtros que el backend uso para responder (se mandan de vuelta para la siguiente pregunta)
+export type FiltrosAsistente = Record<string, unknown>;
+
+// lo que se recuerda de la pregunta anterior, para entender "¿y en enero?" o "¿a que hora es ese?"
+export interface ContextoAsistente {
+  pregunta: string;
+  filtros: FiltrosAsistente;
+  // eventos de la ultima respuesta con tarjetas ("¿a que hora es ese?")
+  ids: number[];
+  // eventos de la ultima lista de 2 o mas ("¿como llego al segundo?")
+  idsLista: number[];
+}
+
+export interface RespuestaAsistente {
+  respuesta: string;
+  eventos: EventoAsistente[];
+  necesitaUbicacion?: boolean;
+  filtros?: FiltrosAsistente;
+  // preguntas sugeridas para seguir la conversacion
+  sugerencias?: string[];
+  // cuantos eventos encontro en total (el chat solo muestra algunos) y sus ids
+  total?: number;
+  idsTodos?: number[];
+}
+
+export const preguntarAsistente = async (
+  mensaje: string,
+  ubicacion?: Ubicacion | null,
+  contexto?: ContextoAsistente | null
+): Promise<RespuestaAsistente> => {
   const respuesta = await fetch(`${API_URL}/api/asistente`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ mensaje }),
+    body: JSON.stringify({
+      mensaje,
+      ...(ubicacion ? { ubicacion } : {}),
+      ...(contexto ? { contexto } : {}),
+    }),
   });
   const cuerpo = await respuesta.json().catch(() => null);
   if (!respuesta.ok) {
@@ -20,3 +56,24 @@ export const preguntarAsistente = async (mensaje: string): Promise<RespuestaAsis
   }
   return cuerpo as RespuestaAsistente;
 };
+
+// pide la ubicacion al navegador (el usuario tiene que dar permiso)
+export const obtenerUbicacion = (): Promise<Ubicacion> =>
+  new Promise((resolver, rechazar) => {
+    if (!navigator.geolocation) {
+      rechazar(new Error("Tu navegador no permite compartir la ubicación."));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (posicion) => resolver({ lat: posicion.coords.latitude, lon: posicion.coords.longitude }),
+      (error) =>
+        rechazar(
+          new Error(
+            error.code === error.PERMISSION_DENIED
+              ? 'No diste permiso para usar tu ubicación. Puedes activarlo en el candado junto a la dirección de la página, o preguntarme por un lugar, por ejemplo "¿qué hay cerca del Zócalo?".'
+              : 'No pude obtener tu ubicación. Intenta de nuevo, o pregúntame por un lugar, por ejemplo "¿qué hay cerca del Zócalo?".'
+          )
+        ),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  });

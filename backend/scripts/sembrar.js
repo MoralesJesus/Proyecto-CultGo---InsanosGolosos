@@ -64,32 +64,56 @@ const eventos = [
   },
 ];
 
-// video de referencia para el reproductor del detalle: los artistas de ejemplo son
-// inventados, asi que cada uno lleva un video real de ese genero tocado en Oaxaca
-const VIDEOS = {
-  'Marimbas en el Zócalo': 'https://www.youtube.com/watch?v=a_OchuoxlFs', // Marimba del Estado de Oaxaca
-  'Rock en la Plaza de la Danza': 'https://www.youtube.com/watch?v=Av4qdVd-BpI', // Enjambre en vivo en Oaxaca
-  'Sones para los Fieles Difuntos': 'https://www.youtube.com/watch?v=5iyMimj2SA0', // Trío Xhavizende, Juchitán
-  'Noche de Sones Istmeños': 'https://www.youtube.com/watch?v=qYhuj5XFJlI', // La Llorona y La Sandunga, Guelaguetza
-  'Festival Guelaguetza Sonora': 'https://www.youtube.com/watch?v=2Ns8IhXWqdk', // Banda Filarmónica de Tlahuitoltepec
-  'Jazz entre Muros de Cantera': 'https://www.youtube.com/watch?v=wgn_drJazbQ', // Festival de Jazz de Mazunte
-  'Canciones del Valle': 'https://www.youtube.com/watch?v=aedtzI1AHyg', // Lila Downs, La Llorona
-  'Calenda Electrónica': 'https://www.youtube.com/watch?v=ywNV8SStTSg', // live set en Santa María Xadani
+// musica de referencia para el reproductor del detalle: los artistas de ejemplo son
+// inventados, asi que cada uno lleva un video y una cancion/playlist reales de ese genero
+const MUSICA = {
+  'Marimbas en el Zócalo': {
+    youtube: 'https://www.youtube.com/watch?v=a_OchuoxlFs', // Marimba del Estado de Oaxaca en el Zócalo
+    spotify: 'https://open.spotify.com/track/16dCeXPB6aFgTOuFC2fDLc', // La Marimba del Estado de Oaxaca
+  },
+  'Rock en la Plaza de la Danza': {
+    youtube: 'https://www.youtube.com/watch?v=Av4qdVd-BpI', // Enjambre en vivo en Oaxaca
+    spotify: 'https://open.spotify.com/track/5hzC6inZc0Wv2g5ByF1CcY', // Enjambre, Somos Ajenos
+  },
+  'Sones para los Fieles Difuntos': {
+    youtube: 'https://www.youtube.com/watch?v=5iyMimj2SA0', // Trío Xhavizende, Juchitán
+    spotify: 'https://open.spotify.com/album/06SdrXSpXH6b7VuaAg3TRY', // Trío Montealbán, Sones Istmeños
+  },
+  'Noche de Sones Istmeños': {
+    youtube: 'https://www.youtube.com/watch?v=qYhuj5XFJlI', // La Llorona y La Sandunga, Guelaguetza
+    spotify: 'https://open.spotify.com/playlist/2oiczhTX0Ami0a8W1zhd2e', // playlist de sones istmeños
+  },
+  'Festival Guelaguetza Sonora': {
+    youtube: 'https://www.youtube.com/watch?v=2Ns8IhXWqdk', // Banda Filarmónica de Tlahuitoltepec
+    spotify: 'https://open.spotify.com/track/3sz9Yl23A7MSLJjSb7V6PD', // Banda del CECAM, Sones Mixes de Tlahuitoltepec
+  },
+  'Jazz entre Muros de Cantera': {
+    youtube: 'https://www.youtube.com/watch?v=wgn_drJazbQ', // Festival de Jazz de Mazunte
+    spotify: 'https://open.spotify.com/playlist/3gr8sawtph59rJSp4SPMZo', // playlist Jazz en México
+  },
+  'Canciones del Valle': {
+    youtube: 'https://www.youtube.com/watch?v=aedtzI1AHyg', // Lila Downs, La Llorona en vivo
+    spotify: 'https://open.spotify.com/track/7pidjElpO3qLdYtKA7T021', // Lila Downs, La Llorona
+  },
+  'Calenda Electrónica': {
+    youtube: 'https://www.youtube.com/watch?v=ywNV8SStTSg', // live set en Santa María Xadani
+    spotify: 'https://open.spotify.com/playlist/37i9dQZF1DX11Ia2xt6mrG', // playlist mint MX, electrónica mexicana
+  },
 };
 
 (async () => {
   let insertados = 0;
   let conFoto = 0;
-  let conVideo = 0;
+  let conMusica = 0;
   try {
     for (const { dias, ...evento } of eventos) {
       const { rowCount } = await pool.query(
-        `INSERT INTO eventos_cultgo (nombre, artista, genero, fecha, hora, lugar, direccion, latitud, longitud, descripcion, imagen, enlace_youtube)
-         SELECT $1::varchar, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+        `INSERT INTO eventos_cultgo (nombre, artista, genero, fecha, hora, lugar, direccion, latitud, longitud, descripcion, imagen, enlace_youtube, enlace_spotify)
+         SELECT $1::varchar, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
          WHERE NOT EXISTS (SELECT 1 FROM eventos_cultgo WHERE nombre = $1::varchar);`,
         [evento.nombre, evento.artista, evento.genero, enDias(dias), evento.hora, evento.lugar,
           evento.direccion, evento.latitud, evento.longitud, evento.descripcion, evento.imagen ?? null,
-          VIDEOS[evento.nombre] ?? null]
+          MUSICA[evento.nombre]?.youtube ?? null, MUSICA[evento.nombre]?.spotify ?? null]
       );
       insertados += rowCount;
 
@@ -102,18 +126,23 @@ const VIDEOS = {
         conFoto += actualizado.rowCount;
       }
 
-      // igual con el video, sin pisar uno que el admin ya haya puesto
-      if (VIDEOS[evento.nombre]) {
+      // igual con la musica: solo se llena lo que este vacio, sin pisar lo que puso el admin
+      const musica = MUSICA[evento.nombre];
+      if (musica) {
         const actualizado = await pool.query(
-          `UPDATE eventos_cultgo SET enlace_youtube = $2 WHERE nombre = $1::varchar AND (enlace_youtube IS NULL OR enlace_youtube = '');`,
-          [evento.nombre, VIDEOS[evento.nombre]]
+          `UPDATE eventos_cultgo
+           SET enlace_youtube = COALESCE(NULLIF(enlace_youtube, ''), $2),
+               enlace_spotify = COALESCE(NULLIF(enlace_spotify, ''), $3)
+           WHERE nombre = $1::varchar
+             AND (COALESCE(enlace_youtube, '') = '' OR COALESCE(enlace_spotify, '') = '');`,
+          [evento.nombre, musica.youtube, musica.spotify]
         );
-        conVideo += actualizado.rowCount;
+        conMusica += actualizado.rowCount;
       }
     }
     console.log(`Eventos de ejemplo insertados: ${insertados} (ya existian: ${eventos.length - insertados})`);
     if (conFoto) console.log(`Eventos existentes a los que se les agrego foto: ${conFoto}`);
-    if (conVideo) console.log(`Eventos existentes a los que se les agrego video: ${conVideo}`);
+    if (conMusica) console.log(`Eventos existentes a los que se les agrego video o Spotify: ${conMusica}`);
   } catch (error) {
     console.error('Error cargando eventos de ejemplo:', error.message);
     process.exitCode = 1;

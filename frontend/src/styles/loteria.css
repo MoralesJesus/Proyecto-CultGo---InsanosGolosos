@@ -13,6 +13,65 @@
     #0d0e1d;
 }
 
+/* ---------- la mesa: cartas boca abajo ---------- */
+
+.loteria-mesa-cartas {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.loteria-mesa-cartas .loteria-grito,
+.loteria-mesa-cartas .loteria-datos {
+  margin: 0;
+}
+
+.loteria-abanico {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 0 32px;
+}
+
+.loteria-carta-mesa {
+  /* el logo se acomoda al ancho de la carta */
+  container-type: inline-size;
+  flex: 0 1 140px;
+  min-width: 0;
+  aspect-ratio: 5 / 8;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 5px solid var(--papel);
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(45deg, rgba(242, 169, 59, 0.16) 0 10px, transparent 10px 20px),
+    var(--anil-700);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  transform: translateY(var(--baja)) rotate(var(--giro));
+  transition: transform var(--normal) var(--salida), box-shadow var(--normal);
+  animation: loteriaReparte 450ms var(--salida) both;
+}
+
+.loteria-carta-mesa .loteria-logo {
+  font-size: 22cqw;
+}
+
+/* al pasar el mouse la carta se levanta, como cuando la vas a tomar */
+.loteria-carta-mesa:hover,
+.loteria-carta-mesa:focus-visible {
+  transform: translateY(calc(var(--baja) - 18px)) rotate(var(--giro)) scale(1.04);
+  box-shadow: 0 22px 40px rgba(0, 0, 0, 0.55), 0 0 0 3px var(--cempasuchil);
+  outline: none;
+}
+
+@keyframes loteriaReparte {
+  from { opacity: 0; transform: translateY(-60px) rotate(0); }
+}
+
 /* ---------- la carta ---------- */
 
 .loteria-carta {
@@ -50,13 +109,6 @@
   font-size: 48px;
   color: var(--cempasuchil);
   transform: rotate(-8deg);
-}
-
-.loteria-reverso-texto {
-  font-size: 13px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--papel);
 }
 
 /* frente: como una carta de loteria, papel con marco de tinta */
@@ -113,17 +165,6 @@
 
 .loteria-carta.volteada .loteria-frente {
   transform: rotateY(0deg);
-}
-
-/* barajando: el reverso tiembla como si se revolviera el mazo */
-.loteria-carta.barajando .loteria-reverso {
-  animation: loteriaBaraja 300ms ease-in-out 3;
-}
-
-@keyframes loteriaBaraja {
-  0%, 100% { transform: translateX(0) rotate(0); }
-  25% { transform: translateX(-14px) rotate(-6deg); }
-  75% { transform: translateX(14px) rotate(6deg); }
 }
 
 /* ---------- lo que salio ---------- */
@@ -211,6 +252,12 @@
   background-color: rgba(236, 233, 245, 0.08);
 }
 
+.loteria-aviso {
+  margin: 16px 0 0;
+  font-size: 14px;
+  color: var(--texto-tenue);
+}
+
 /* ---------- celular ---------- */
 
 @media (max-width: 640px) {
@@ -226,6 +273,16 @@
     width: 200px;
   }
 
+  .loteria-abanico {
+    gap: 8px;
+    padding-bottom: 24px;
+  }
+
+  .loteria-carta-mesa {
+    border-width: 3px;
+    border-radius: 8px;
+  }
+
   .loteria-botones {
     justify-content: center;
   }
@@ -235,7 +292,7 @@
 @media (prefers-reduced-motion: reduce) {
   .loteria-cara,
   .loteria-resultado,
-  .loteria-carta.barajando .loteria-reverso {
+  .loteria-carta-mesa {
     transition: none;
     animation: none;
   }

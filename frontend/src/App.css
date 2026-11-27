@@ -771,24 +771,38 @@ button:disabled {
 }
 
 /* botones de musica en el detalle del evento */
-/* reproductor "escucha antes de ir" */
+/* reproductor "escucha antes de ir": franja al final de la tarjeta del detalle */
 .reproductor {
-  margin-top: var(--e-6);
-  max-width: 720px;
+  padding: var(--e-6);
+  border-top: 1px solid var(--borde);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(242, 169, 59, 0.1), transparent 45%),
+    var(--anil-900);
 }
 
 .reproductor-titulo {
   margin: 0;
   font-family: var(--fuente-titulo);
   font-weight: 800;
-  font-size: 28px;
+  font-size: 32px;
+  line-height: 1;
   text-transform: uppercase;
   color: var(--texto);
 }
 
 .reproductor-nota {
-  margin: var(--e-1) 0 var(--e-4);
+  margin: var(--e-2) 0 var(--e-5);
   color: var(--texto-tenue);
+}
+
+/* con video y spotify: el video ancho a la izquierda y spotify a la derecha */
+.reproductor-medios {
+  display: grid;
+  gap: var(--e-5);
+}
+
+.reproductor-medios.con-ambos {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
 }
 
 /* el video siempre en 16:9, sin importar el ancho */
@@ -797,7 +811,7 @@ button:disabled {
   border-radius: var(--radio-m);
   overflow: hidden;
   border: 1px solid var(--borde);
-  background-color: var(--anil-900);
+  background-color: #000;
 }
 
 .reproductor-video iframe {
@@ -807,10 +821,11 @@ button:disabled {
   display: block;
 }
 
+/* spotify toma el alto del video para que queden parejos */
 .reproductor-spotify {
   width: 100%;
-  height: 152px;
-  margin-top: var(--e-4);
+  height: 100%;
+  min-height: 152px;
   border: 0;
   border-radius: 12px;
 }
@@ -1185,6 +1200,18 @@ button:disabled {
 
   .detalle-titulo {
     padding: var(--e-5) var(--e-4) var(--e-4);
+  }
+
+  .reproductor {
+    padding: var(--e-5) var(--e-4);
+  }
+
+  .reproductor-medios.con-ambos {
+    grid-template-columns: 1fr;
+  }
+
+  .reproductor-spotify {
+    height: 152px;
   }
 
   .detalle-cuerpo {

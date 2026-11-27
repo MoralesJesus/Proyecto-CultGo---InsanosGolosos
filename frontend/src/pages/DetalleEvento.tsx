@@ -73,8 +73,6 @@ const DetalleEvento = () => {
 
             <p className="detalle-descripcion">{evento.descripcion}</p>
 
-            <Reproductor evento={evento} />
-
             {/* botones de musica: solo aparecen si el evento tiene el link */}
             <div className="botones-musica">
               {evento.lugar && (
@@ -115,6 +113,9 @@ const DetalleEvento = () => {
             </div>
           </div>
         </div>
+
+        {/* franja de musica al final de la tarjeta: primero los datos y como llegar */}
+        <Reproductor evento={evento} />
       </article>
     </div>
   );

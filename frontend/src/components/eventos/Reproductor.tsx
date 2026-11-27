@@ -6,7 +6,7 @@ interface Props {
   evento: Pick<Evento, 'nombre' | 'genero' | 'enlaceSpotify' | 'enlaceYoutube'>;
 }
 
-// "escucha antes de ir": el video o la cancion se reproduce aqui mismo, sin salir de la pagina
+// "escucha antes de ir": el video y la musica se reproducen aqui mismo, sin salir de la pagina
 const Reproductor = ({ evento }: Props) => {
   const youtube = embedYoutube(evento.enlaceYoutube);
   const spotify = embedSpotify(evento.enlaceSpotify);
@@ -17,30 +17,34 @@ const Reproductor = ({ evento }: Props) => {
       <h2 className="reproductor-titulo">
         <span aria-hidden="true">🎧</span> Escucha antes de ir
       </h2>
-      <p className="reproductor-nota">Dale play para darte una idea de cómo suena {evento.genero ? conArticulo(evento.genero) : 'este evento'}.</p>
+      <p className="reproductor-nota">
+        Dale play para darte una idea de cómo suena {evento.genero ? conArticulo(evento.genero) : 'este evento'}.
+      </p>
 
-      {youtube && (
-        <div className="reproductor-video">
+      <div className={`reproductor-medios${youtube && spotify ? ' con-ambos' : ''}`}>
+        {youtube && (
+          <div className="reproductor-video">
+            <iframe
+              src={youtube}
+              title={`Video de ${evento.nombre}`}
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
+            />
+          </div>
+        )}
+
+        {spotify && (
           <iframe
-            src={youtube}
-            title={`Video de ${evento.nombre}`}
+            className="reproductor-spotify"
+            src={spotify}
+            title={`Música de ${evento.nombre} en Spotify`}
             loading="lazy"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            referrerPolicy="strict-origin-when-cross-origin"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           />
-        </div>
-      )}
-
-      {spotify && (
-        <iframe
-          className="reproductor-spotify"
-          src={spotify}
-          title={`Música de ${evento.nombre} en Spotify`}
-          loading="lazy"
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-        />
-      )}
+        )}
+      </div>
     </section>
   );
 };

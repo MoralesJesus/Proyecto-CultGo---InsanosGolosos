@@ -17,6 +17,7 @@ import { fondoImagen } from '../utils/imagenes';
 import CuentaRegresiva from '../components/inicio/CuentaRegresiva';
 import TarjetaCartel from '../components/inicio/TarjetaCartel';
 import MapaCercanos from '../components/inicio/MapaCercanos';
+import Loteria from '../components/inicio/Loteria';
 import '../styles/inicio.css';
 
 // convierte "20/10/2026" a "2026-10-20" para poder comparar con el input tipo date
@@ -105,6 +106,9 @@ const Home = () => {
   // evento destacado de la portada: el mas proximo de TODOS (no depende de los filtros)
   const todos = ordenarAgenda(eventos);
   const destacado: EventoEnAgenda | undefined = todos.semana[0] ?? todos.proximo[0];
+  // eventos que aun no pasan, para el mazo de la loteria
+  const proximos = [...todos.semana, ...todos.proximo].map((item) => item.evento);
+  const proximosIds = proximos.map((e) => e.id).join(',');
   const inicioDestacado = destacado ? fechaHora(destacado.evento) : null;
   const imagenDestacado = destacado ? fondoImagen(destacado.evento.imagen) : undefined;
   const cuandoDestacado = (item: EventoEnAgenda) => {
@@ -215,6 +219,10 @@ const Home = () => {
           )}
         </div>
       </header>
+
+      {/* ---------- loteria: un evento al azar de los que vienen ---------- */}
+      {/* el key hace que se vuelva a repartir si cambian los eventos (se cargaron o se edito uno) */}
+      <Loteria key={proximosIds} eventos={proximos} />
 
       {/* ---------- buscador y filtros ---------- */}
       <section id="eventos" className="inicio-filtros" aria-label="Buscar y filtrar eventos">

@@ -3,6 +3,7 @@ import { useEventos } from '../context/useEventos';
 import { partesFecha } from '../utils/formato';
 import { enlaceRuta } from '../utils/mapas';
 import { urlImagen } from '../utils/imagenes';
+import Reproductor from '../components/eventos/Reproductor';
 
 const DetalleEvento = () => {
   // toma el id que viene en la url, ej: /evento/2 -> id = "2"
@@ -71,6 +72,8 @@ const DetalleEvento = () => {
             </dl>
 
             <p className="detalle-descripcion">{evento.descripcion}</p>
+
+            <Reproductor evento={evento} />
 
             {/* botones de musica: solo aparecen si el evento tiene el link */}
             <div className="botones-musica">

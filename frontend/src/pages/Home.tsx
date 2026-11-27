@@ -17,6 +17,7 @@ import { fondoImagen } from '../utils/imagenes';
 import CuentaRegresiva from '../components/inicio/CuentaRegresiva';
 import TarjetaCartel from '../components/inicio/TarjetaCartel';
 import MapaCercanos from '../components/inicio/MapaCercanos';
+import Loteria from '../components/inicio/Loteria';
 import '../styles/inicio.css';
 
 // convierte "20/10/2026" a "2026-10-20" para poder comparar con el input tipo date
@@ -215,6 +216,9 @@ const Home = () => {
           )}
         </div>
       </header>
+
+      {/* ---------- loteria: un evento al azar de los que vienen ---------- */}
+      <Loteria eventos={[...todos.semana, ...todos.proximo].map((item) => item.evento)} />
 
       {/* ---------- buscador y filtros ---------- */}
       <section id="eventos" className="inicio-filtros" aria-label="Buscar y filtrar eventos">

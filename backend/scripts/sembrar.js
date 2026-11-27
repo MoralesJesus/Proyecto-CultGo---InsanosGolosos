@@ -64,17 +64,32 @@ const eventos = [
   },
 ];
 
+// video de referencia para el reproductor del detalle: los artistas de ejemplo son
+// inventados, asi que cada uno lleva un video real de ese genero tocado en Oaxaca
+const VIDEOS = {
+  'Marimbas en el Zócalo': 'https://www.youtube.com/watch?v=a_OchuoxlFs', // Marimba del Estado de Oaxaca
+  'Rock en la Plaza de la Danza': 'https://www.youtube.com/watch?v=Av4qdVd-BpI', // Enjambre en vivo en Oaxaca
+  'Sones para los Fieles Difuntos': 'https://www.youtube.com/watch?v=5iyMimj2SA0', // Trío Xhavizende, Juchitán
+  'Noche de Sones Istmeños': 'https://www.youtube.com/watch?v=qYhuj5XFJlI', // La Llorona y La Sandunga, Guelaguetza
+  'Festival Guelaguetza Sonora': 'https://www.youtube.com/watch?v=2Ns8IhXWqdk', // Banda Filarmónica de Tlahuitoltepec
+  'Jazz entre Muros de Cantera': 'https://www.youtube.com/watch?v=wgn_drJazbQ', // Festival de Jazz de Mazunte
+  'Canciones del Valle': 'https://www.youtube.com/watch?v=aedtzI1AHyg', // Lila Downs, La Llorona
+  'Calenda Electrónica': 'https://www.youtube.com/watch?v=ywNV8SStTSg', // live set en Santa María Xadani
+};
+
 (async () => {
   let insertados = 0;
   let conFoto = 0;
+  let conVideo = 0;
   try {
     for (const { dias, ...evento } of eventos) {
       const { rowCount } = await pool.query(
-        `INSERT INTO eventos_cultgo (nombre, artista, genero, fecha, hora, lugar, direccion, latitud, longitud, descripcion, imagen)
-         SELECT $1::varchar, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+        `INSERT INTO eventos_cultgo (nombre, artista, genero, fecha, hora, lugar, direccion, latitud, longitud, descripcion, imagen, enlace_youtube)
+         SELECT $1::varchar, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
          WHERE NOT EXISTS (SELECT 1 FROM eventos_cultgo WHERE nombre = $1::varchar);`,
         [evento.nombre, evento.artista, evento.genero, enDias(dias), evento.hora, evento.lugar,
-          evento.direccion, evento.latitud, evento.longitud, evento.descripcion, evento.imagen ?? null]
+          evento.direccion, evento.latitud, evento.longitud, evento.descripcion, evento.imagen ?? null,
+          VIDEOS[evento.nombre] ?? null]
       );
       insertados += rowCount;
 
@@ -86,9 +101,19 @@ const eventos = [
         );
         conFoto += actualizado.rowCount;
       }
+
+      // igual con el video, sin pisar uno que el admin ya haya puesto
+      if (VIDEOS[evento.nombre]) {
+        const actualizado = await pool.query(
+          `UPDATE eventos_cultgo SET enlace_youtube = $2 WHERE nombre = $1::varchar AND (enlace_youtube IS NULL OR enlace_youtube = '');`,
+          [evento.nombre, VIDEOS[evento.nombre]]
+        );
+        conVideo += actualizado.rowCount;
+      }
     }
     console.log(`Eventos de ejemplo insertados: ${insertados} (ya existian: ${eventos.length - insertados})`);
     if (conFoto) console.log(`Eventos existentes a los que se les agrego foto: ${conFoto}`);
+    if (conVideo) console.log(`Eventos existentes a los que se les agrego video: ${conVideo}`);
   } catch (error) {
     console.error('Error cargando eventos de ejemplo:', error.message);
     process.exitCode = 1;

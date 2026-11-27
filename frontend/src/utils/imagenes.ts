@@ -7,6 +7,13 @@ export const urlImagen = (imagen?: string) => {
   return imagen.startsWith("/uploads/") ? `${API_URL}${imagen}` : imagen;
 };
 
+// para backgroundImage: entre comillas, porque un enlace con espacios o
+// parentesis (muy comun en Wikipedia) sin comillas no se muestra
+export const fondoImagen = (imagen?: string) => {
+  const url = urlImagen(imagen);
+  return url ? `url("${url.replace(/["\\\n\r]/g, encodeURIComponent)}")` : undefined;
+};
+
 const TIPOS_PERMITIDOS = ["image/jpeg", "image/png", "image/webp"];
 const LADO_MAXIMO = 1600; // px
 const MB = 1024 * 1024;

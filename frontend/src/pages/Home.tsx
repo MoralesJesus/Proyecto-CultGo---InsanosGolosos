@@ -4,7 +4,7 @@ import Buscador from '../components/buscador/Buscador';
 import FiltroFecha from '../components/filtros/FiltroFecha';
 import { useEventos } from '../context/useEventos';
 import { calcularDistancia } from '../utils/distancia';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { cerrarSesion } from '../services/firebase';
 import { esAdmin } from '../config/admins';
 import Footer from '../components/layout/Footer';
@@ -13,7 +13,7 @@ import { fechaHora, ordenarAgenda } from '../utils/agenda';
 import type { EventoEnAgenda } from '../utils/agenda';
 import { partesFecha } from '../utils/formato';
 import { enlaceRuta } from '../utils/mapas';
-import { urlImagen } from '../utils/imagenes';
+import { fondoImagen } from '../utils/imagenes';
 import CuentaRegresiva from '../components/inicio/CuentaRegresiva';
 import TarjetaCartel from '../components/inicio/TarjetaCartel';
 import MapaCercanos from '../components/inicio/MapaCercanos';
@@ -106,7 +106,7 @@ const Home = () => {
   const todos = ordenarAgenda(eventos);
   const destacado: EventoEnAgenda | undefined = todos.semana[0] ?? todos.proximo[0];
   const inicioDestacado = destacado ? fechaHora(destacado.evento) : null;
-  const imagenDestacado = destacado ? urlImagen(destacado.evento.imagen) : undefined;
+  const imagenDestacado = destacado ? fondoImagen(destacado.evento.imagen) : undefined;
   const cuandoDestacado = (item: EventoEnAgenda) => {
     if (item.etiqueta && item.grupo === 'semana') return item.etiqueta.replace(' · Reprogramado', '');
     const { semana, dia, mes } = partesFecha(item.evento.fecha);
@@ -144,7 +144,7 @@ const Home = () => {
       {/* ---------- portada con el proximo evento ---------- */}
       <header className="inicio-hero">
         {imagenDestacado && (
-          <div className="hero-foto" style={{ backgroundImage: `url(${imagenDestacado})` }} aria-hidden="true" />
+          <div className="hero-foto" style={{ backgroundImage: imagenDestacado }} aria-hidden="true" />
         )}
         <div className="reflector reflector-1" aria-hidden="true" />
         <div className="reflector reflector-2" aria-hidden="true" />

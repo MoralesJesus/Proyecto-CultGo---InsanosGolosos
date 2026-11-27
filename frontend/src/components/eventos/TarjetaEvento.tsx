@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Evento } from '../../types';
 import { partesFecha } from '../../utils/formato';
-import { urlImagen } from '../../utils/imagenes';
+import { fondoImagen } from '../../utils/imagenes';
 
 interface TarjetaEventoProps {
   evento: Evento;
@@ -28,7 +28,7 @@ const TarjetaEvento: React.FC<TarjetaEventoProps> = ({ evento, variante, etiquet
         {evento.imagen && (
           <div
             className="tarjeta-fondo"
-            style={{ backgroundImage: `url(${urlImagen(evento.imagen)})` }}
+            style={{ backgroundImage: fondoImagen(evento.imagen) }}
           />
         )}
 

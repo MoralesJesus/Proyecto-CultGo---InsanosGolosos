@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Evento } from '../../types';
-import { urlImagen } from '../../utils/imagenes';
+import { fondoImagen } from '../../utils/imagenes';
 
 interface Props {
   evento: Evento;
@@ -20,7 +20,7 @@ const formatoKm = (km: number) => (km < 1 ? `${Math.round(km * 1000)} m` : `${km
 
 // tarjeta vertical tipo cartel de concierto (seccion "Esta semana")
 const TarjetaCartel = ({ evento, etiqueta, distanciaKm, orden = 0 }: Props) => {
-  const imagen = urlImagen(evento.imagen);
+  const imagen = fondoImagen(evento.imagen);
 
   return (
     <Link
@@ -32,7 +32,7 @@ const TarjetaCartel = ({ evento, etiqueta, distanciaKm, orden = 0 }: Props) => {
         className="cartel-fondo"
         style={
           imagen
-            ? { backgroundImage: `url(${imagen})` }
+            ? { backgroundImage: imagen }
             : { background: `radial-gradient(circle at 30% 20%, ${colorDe(evento.genero)}, #0b0c18 75%)` }
         }
       />

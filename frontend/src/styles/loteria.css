@@ -13,6 +13,41 @@
     #0d0e1d;
 }
 
+/* ---------- encabezado con la bocinita ---------- */
+
+.loteria-cabeza {
+  align-items: center;
+}
+
+.loteria-bocina {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--borde-fuerte);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cempasuchil);
+  cursor: pointer;
+  transition: background-color var(--rapido), color var(--rapido);
+}
+
+.loteria-bocina svg {
+  width: 22px;
+  height: 22px;
+}
+
+.loteria-bocina:hover {
+  background-color: rgba(236, 233, 245, 0.08);
+}
+
+/* silenciada: la bocina se ve apagada */
+.loteria-bocina[aria-pressed='true'] {
+  color: var(--texto-tenue);
+}
+
 /* ---------- la mesa: cartas boca abajo ---------- */
 
 .loteria-mesa-cartas {

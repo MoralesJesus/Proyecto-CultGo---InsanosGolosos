@@ -3,7 +3,6 @@ import { useEventos } from '../context/useEventos';
 import { partesFecha } from '../utils/formato';
 import { enlaceRuta } from '../utils/mapas';
 import { urlImagen } from '../utils/imagenes';
-import Reproductor from '../components/eventos/Reproductor';
 
 const DetalleEvento = () => {
   // toma el id que viene en la url, ej: /evento/2 -> id = "2"
@@ -113,9 +112,6 @@ const DetalleEvento = () => {
             </div>
           </div>
         </div>
-
-        {/* franja de musica al final de la tarjeta: primero los datos y como llegar */}
-        <Reproductor evento={evento} />
       </article>
     </div>
   );

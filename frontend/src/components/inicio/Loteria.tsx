@@ -5,6 +5,7 @@ import type { Evento } from '../../types';
 import { fondoImagen } from '../../utils/imagenes';
 import { articulo } from '../../utils/generos';
 import { partesFecha } from '../../utils/formato';
+import { MusicaLoteria } from '../../utils/musicaLoteria';
 import '../../styles/loteria.css';
 
 interface Props {
@@ -14,6 +15,26 @@ interface Props {
 
 // cuantas cartas boca abajo se ponen en la mesa
 const CARTAS_EN_MESA = 5;
+
+// la musica se apaga sola si nadie toca la loteria en este tiempo
+const SILENCIO_TRAS_MS = 20000;
+
+// se recuerda si la persona silencio la loteria (si el navegador no deja guardar, no pasa nada)
+const CLAVE_SILENCIO = 'cultgo-loteria-silencio';
+const leerSilencio = () => {
+  try {
+    return localStorage.getItem(CLAVE_SILENCIO) === '1';
+  } catch {
+    return false;
+  }
+};
+const guardarSilencio = (valor: boolean) => {
+  try {
+    localStorage.setItem(CLAVE_SILENCIO, valor ? '1' : '0');
+  } catch {
+    // sin guardar: solo dura mientras la pagina esta abierta
+  }
+};
 
 // dibujo de la carta cuando el evento no tiene foto
 const DIBUJOS: [RegExp, string][] = [
@@ -61,7 +82,57 @@ const Loteria = ({ eventos }: Props) => {
   const [reparto, setReparto] = useState(0);
   const temporizador = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  useEffect(() => () => clearTimeout(temporizador.current), []);
+  // ---- musica: solo suena mientras se juega ----
+  const [silencio, setSilencio] = useState(leerSilencio);
+  const musica = useRef<MusicaLoteria | null>(null);
+  const inactividad = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const seccion = useRef<HTMLElement>(null);
+
+  const callar = (segundos?: number) => {
+    clearTimeout(inactividad.current);
+    musica.current?.detener(segundos);
+  };
+
+  // cada vez que se usa la loteria: que suene, y que se apague sola si ya no la usan
+  const avivar = (conVolteo = false) => {
+    if (silencio) return;
+    musica.current ??= new MusicaLoteria();
+    if (conVolteo) musica.current.voltear();
+    musica.current.iniciar();
+    clearTimeout(inactividad.current);
+    inactividad.current = setTimeout(() => musica.current?.detener(2.5), SILENCIO_TRAS_MS);
+  };
+
+  const alternarSilencio = () => {
+    const nuevo = !silencio;
+    setSilencio(nuevo);
+    guardarSilencio(nuevo);
+    if (nuevo) callar(0.3);
+  };
+
+  // si la persona se va de la loteria (baja o sube la pagina), la musica se calla
+  useEffect(() => {
+    const el = seccion.current;
+    if (!el || !('IntersectionObserver' in window)) return;
+    const observador = new IntersectionObserver(([entrada]) => {
+      if (!entrada.isIntersecting) {
+        clearTimeout(inactividad.current);
+        musica.current?.detener(1);
+      }
+    });
+    observador.observe(el);
+    return () => observador.disconnect();
+  }, []);
+
+  // al salir de la pagina se apaga todo
+  useEffect(
+    () => () => {
+      clearTimeout(temporizador.current);
+      clearTimeout(inactividad.current);
+      musica.current?.cerrar();
+    },
+    []
+  );
 
   if (eventos.length === 0) return null;
 
@@ -76,6 +147,7 @@ const Loteria = ({ eventos }: Props) => {
   };
 
   const escoger = (evento: Evento) => {
+    avivar(true);
     setElegida(evento);
     setGrito(al(GRITOS));
     setVolteada(false);
@@ -90,11 +162,13 @@ const Loteria = ({ eventos }: Props) => {
     const nuevas = [...descartadas, elegida.id];
     setDescartadas(nuevas);
     repartir(nuevas);
+    avivar();
   };
 
   const deNuevo = () => {
     setDescartadas([]);
     repartir([]);
+    avivar();
   };
 
   // ---------- ya escogio: la carta grande volteada y sus datos ----------
@@ -102,8 +176,8 @@ const Loteria = ({ eventos }: Props) => {
     const fecha = partesFecha(elegida.fecha);
     const quedan = restantes.length - 1;
     return (
-      <section id="loteria" className="inicio-seccion loteria" aria-label="Lotería de eventos">
-        <Cabeza />
+      <section ref={seccion} id="loteria" className="inicio-seccion loteria" aria-label="Lotería de eventos">
+        <Cabeza silencio={silencio} onSilencio={alternarSilencio} />
         <div className="loteria-mesa loteria-resultado-mesa">
           <div className={`loteria-carta${volteada ? ' volteada' : ''}`}>
             <div className="loteria-cara loteria-reverso" aria-hidden="true">
@@ -135,7 +209,7 @@ const Loteria = ({ eventos }: Props) => {
                 {elegida.lugar}
               </p>
               <div className="loteria-botones">
-                <Link to={`/evento/${elegida.id}`} className="loteria-boton">
+                <Link to={`/evento/${elegida.id}`} className="loteria-boton" onClick={() => callar(0.3)}>
                   Ver evento →
                 </Link>
                 {quedan > 0 ? (
@@ -160,8 +234,8 @@ const Loteria = ({ eventos }: Props) => {
 
   // ---------- la mesa: cartas boca abajo para escoger ----------
   return (
-    <section id="loteria" className="inicio-seccion loteria" aria-label="Lotería de eventos">
-      <Cabeza />
+    <section ref={seccion} id="loteria" className="inicio-seccion loteria" aria-label="Lotería de eventos">
+      <Cabeza silencio={silencio} onSilencio={alternarSilencio} />
       <div className="loteria-mesa loteria-mesa-cartas">
         <p className="loteria-grito">
           {descartadas.length ? '¡Otra vez! Escoge una carta' : '¡Se va y se corre! Escoge una carta'}
@@ -198,10 +272,36 @@ const Loteria = ({ eventos }: Props) => {
   );
 };
 
-const Cabeza = () => (
-  <div className="seccion-cabeza">
+interface CabezaProps {
+  silencio: boolean;
+  onSilencio: () => void;
+}
+
+const Cabeza = ({ silencio, onSilencio }: CabezaProps) => (
+  <div className="seccion-cabeza loteria-cabeza">
     <h2>¿No sabes a dónde ir?</h2>
     <span>Escoge una carta de la lotería y te decimos qué hay</span>
+    {/* bocinita para quitar o poner la musica */}
+    <button
+      type="button"
+      className="loteria-bocina"
+      onClick={onSilencio}
+      aria-pressed={silencio}
+      aria-label={silencio ? 'Poner la música de la lotería' : 'Quitar la música de la lotería'}
+      title={silencio ? 'Poner música' : 'Quitar música'}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor" />
+        {silencio ? (
+          <path d="m22 9-6 6M16 9l6 6" />
+        ) : (
+          <>
+            <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+            <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+          </>
+        )}
+      </svg>
+    </button>
   </div>
 );
 

@@ -59,9 +59,20 @@ const fechaFlexible = (texto, hoy) => {
   const dia = Number(m[1]);
   const mes = Number(m[2]) - 1;
   if (mes < 0 || mes > 11 || dia < 1 || dia > 31) return null;
-  if (m[3]) return new Date(m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3]), mes, dia);
-  const esteAnio = new Date(hoy.getFullYear(), mes, dia);
-  return esteAnio < hoy ? new Date(hoy.getFullYear() + 1, mes, dia) : esteAnio;
+  // "31/02" no existe: sin esto JavaScript lo pasa al 3 de marzo
+  const real = (anio) => {
+    const fecha = new Date(anio, mes, dia);
+    return fecha.getMonth() === mes ? fecha : null;
+  };
+  if (m[3]) return real(m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3]));
+  const esteAnio = real(hoy.getFullYear());
+  // si ya paso (o no existe este año, como un 29/02), se busca la siguiente vez que caiga
+  if (esteAnio && esteAnio >= hoy) return esteAnio;
+  for (let anio = hoy.getFullYear() + 1; anio <= hoy.getFullYear() + 4; anio++) {
+    const fecha = real(anio);
+    if (fecha) return fecha;
+  }
+  return null;
 };
 
 const yaPaso = (evento, hoy) => {
@@ -838,6 +849,18 @@ module.exports = (app, pool, aEvento) => {
     // ---- saludo, gracias o tema que no es de eventos ----
     if (filtros.intencion === 'otro') {
       return res.json({ respuesta: respuestaOtroTema(mensaje), eventos: [], sugerencias: SUGERENCIAS_INICIO });
+    }
+
+    // ---- fecha escrita por el usuario que no existe ("31 de febrero") ----
+    const escrito = periodoMencionado(mensaje, hoy);
+    const fechasPedidas = escrito?.periodo === 'fecha' ? [escrito.fecha]
+      : escrito?.periodo === 'rango' ? String(escrito.fecha ?? '').split('|') : [];
+    if (fechasPedidas.some((f) => !fechaFlexible(f, hoy))) {
+      return res.json({
+        respuesta: 'Esa fecha no existe en el calendario. ¿Me la escribes de nuevo? Por ejemplo "20/12" o "20 de diciembre".',
+        eventos: [],
+        sugerencias: SUGERENCIAS_INICIO,
+      });
     }
 
     // ---- punto de referencia para "cerca" ----
